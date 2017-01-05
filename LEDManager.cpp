@@ -5,14 +5,14 @@
  *      Author: buelowp
  */
 
-#include "LightsManager.h"
+#include "LEDManager.h"
 
-LightsManager::LightsManager() {
+LEDManager::LEDManager() {
 	// TODO Auto-generated constructor stub
 
 }
 
-LightsManager::~LightsManager() {
+LEDManager::~LEDManager() {
 	// TODO Auto-generated destructor stub
 }
 

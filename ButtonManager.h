@@ -18,15 +18,19 @@ public:
 	virtual ~ButtonManager();
 
 	void start();
+	void turnLedsOff();
+	void turnLedOff(int);
+	void turnLedOn(int);
 
 public slots:
-	void buttonDown(uint32_t, uint32_t);
-	void buttonUp(uint32_t, uint32_t, uint32_t);
+	void buttonDown(int, unsigned int);
+	void buttonUp(int);
 	void panelConnected();
 	void panelDisconnected();
 
 signals:
-	void buttonPressed(uint32_t);
+	void buttonPressed(int);
+	void ready();
 
 private:
 	XKey8 *m_buttonManager;

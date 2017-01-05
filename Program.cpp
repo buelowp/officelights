@@ -43,30 +43,18 @@
 
 Program::Program(QObject *parent) : QObject(parent)
 {
-	m_on = false;
-	m_ct = 153;
-	m_Lights = new Lights();
-	m_ProgTimer = new QTimer(this);
-	m_apiKey = m_KeyStore.apiKey();
-	m_ipAddr = m_KeyStore.ipAddr();
-	if (m_apiKey.size()) {
-		if (m_ipAddr.size())
-			m_Bridge = HueBridgeConnection::instance(m_apiKey, m_ipAddr);
-		else
-			m_Bridge = HueBridgeConnection::instance(m_apiKey);
-	}
-	else
-		m_Bridge = HueBridgeConnection::instance();
+	m_buttons = new ButtonManager();
+	m_leds = new LEDManager();
+//	m_hue = new HueManager();
 
-	connect(m_Lights, SIGNAL(busyChanged()), this, SLOT(lightsBusyChanged()));
-	connect(m_ProgTimer, SIGNAL(timeout()), this, SLOT(progIntTimeout()));
-	if (m_Bridge) {
-		connect(m_Bridge, SIGNAL(bridgeFoundChanged()), this, SLOT(bridgeFound()));
-		connect(m_Bridge, SIGNAL(connectedBridgeChanged()), this, SLOT(connectedBridgeChanged()));
-		connect(m_Bridge, SIGNAL(apiKeyChanged()), this, SLOT(apiKeyChanged()));
-		connect(m_Bridge, SIGNAL(bridgeFoundChanged()), this, SLOT(bridgeFound()));
-		connect(m_Bridge, SIGNAL(statusChanged(int)), this, SLOT(bridgeStatusChange(int)));
-	}
+//	m_progTimer = new QTimer(this);
+//	connect(m_progTimer, SIGNAL(timeout()), this, SLOT(progIntTimeout()));
+//	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
+//	connect(m_hue, SIGNAL(hueLightsFound()), this, SLOT(hueLightsFound()));
+	connect(m_buttons, SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
+	connect(m_buttons, SIGNAL(ready()), this, SLOT(buttonsFound()));
+
+	m_buttons->start();
 }
 
 Program::~Program()
@@ -75,85 +63,34 @@ Program::~Program()
 
 void Program::init()
 {
-	/*
-	QTime t = QTime::currentTime();
-
-	if (m_apiKey.size() == 0) {
-		m_Bridge->createUser("lights");
-	}
-	else {
-		m_Bridge->setApiKey(m_apiKey);
-	}
-
-	connect(m_Bridge, SIGNAL(bridgeFoundChanged()), this, SLOT(bridgeFound()));
-	connect(m_Bridge, SIGNAL(statusChanged()), this, SLOT(bridgeStatusChange()));
-
-	if (t.hour() < 6 || t.hour() >= 19) {
-		setTimeout();
-	}
-	else
-		runWorkdayProgram();
-	*/
 }
 
-void Program::bridgeFound()
+void Program::hueBridgeFound()
 {
-	qWarning() << __FUNCTION__ << ": Found a bridge, searching for lights";
-	m_Lights->refresh();
+
 }
 
-void Program::lightsBusyChanged()
+void Program::hueLightsFound()
 {
-	qWarning() << "Found" << m_Lights->rowCount() << "lights";
-	for (int i = 0; i < m_Lights->rowCount(); i++) {
-		Light *light = m_Lights->get(i);
-		qWarning() << "Found light" << light->name();
-		qWarning() << "with SW version" << light->swversion();
-		if (light->on()) {
-			light->setOn(false);
-		}
-	}
-	m_on = false;
-	runWorkdayProgram();
+
 }
 
-void Program::apiKeyChanged()
+void Program::buttonsFound()
 {
-	qWarning() << __FUNCTION__ << ": API key has been reset to" << m_Bridge->apiKey();
+	m_buttons->turnLedsOff();
 }
 
-void Program::connectedBridgeChanged()
+void Program::buttonPressed(int b)
 {
-	qWarning() << __FUNCTION__ << ": Got a connectedBridgeChanged() message";
+	m_buttons->turnLedOn(b);
 }
 
-void Program::bridgeStatusChange(int num)
-{
-	m_BridgeStatus = m_Bridge->status();
-
-	switch(m_BridgeStatus) {
-	case HueBridgeConnection::BridgeStatusConnected:
-		qWarning() << __FUNCTION__ << ": Bridge is connected, signal num" << num;
-		m_Lights->refresh();
-		break;
-	case HueBridgeConnection::BridgeStatusConnecting:
-		qWarning() << __FUNCTION__ << ": Bridge is connecting, signal num" << num;
-		break;
-	case HueBridgeConnection::BridgeStatusSearching:
-		qWarning() << __FUNCTION__ << ": Searching for a bridge, signal num" << num;
-		break;
-	case HueBridgeConnection::BridgeStatusAuthenticationFailure:
-		qWarning() << __FUNCTION__ << ": Unable to authenticate with API key" << m_apiKey;
-		break;
-	}
-}
-
-void Program::switchTimeout()
+void Program::switchProgramTimeout()
 {
 	runWorkdayProgram();
 }
 
-void Program::setTimeout()
+void Program::setProgramTimeout()
 {
 	QTime t = QTime::currentTime();
 
@@ -169,34 +106,6 @@ void Program::setTimeout()
 	}
 }
 
-void Program::turnLightsOn(bool state)
-{
-	for (int i = 0; i < m_Lights->rowCount(); i++) {
-		Light *light = m_Lights->get(i);
-		light->setOn(state);
-	}
-	m_on = state;
-}
-
-void Program::setLightBri(int b)
-{
-	if (b > 0 && b < 255) {
-		for (int i = 0; i < m_Lights->rowCount(); i++) {
-			Light *light = m_Lights->get(i);
-			light->setBri(b);
-		}
-	}
-}
-
-void Program::setLightCTColor(quint16 ct)
-{
-	if (ct <= 500 || ct >= 153) {
-		for (int i = 0; i < m_Lights->rowCount(); i++) {
-			Light *light = m_Lights->get(i);
-			light->setCt(ct);
-		}
-	}
-}
 
 /**
  * \func void Program::progIntTimeout()
@@ -205,23 +114,22 @@ void Program::setLightCTColor(quint16 ct)
  * the morning gets later. If it's afternoon, get warmer. Don't get warmer than 500
  * which is the max value
  */
-void Program::progIntTimeout()
+void Program::programIntTimeout()
 {
 	QTime t = QTime::currentTime();
 
 	if (t.hour() < 7) {
 		qWarning() << __FUNCTION__ << ": Too early, turning lights off";
-		turnLightsOn(false);
+		m_hue->turnLightsOn();
 	}
 	else if (t.hour() > 17)  {
 		qWarning() << __FUNCTION__ << ": Too late, turning lights off";
-		turnLightsOn(false);
+		m_hue->turnLightsOff();
 	}
 	else {
 		qWarning() << __FUNCTION__ << ": worktime, turning lights on";
-		m_ct = 300;
-		setLightCTColor(m_ct);
-		setLightBri(254);
+		m_hue->setLightsCTColor(300);
+		m_hue->setBrightness(254);
 	}
 }
 
@@ -232,34 +140,17 @@ void Program::runWorkdayProgram()
 	if (dt.date().dayOfWeek() < 6) {
 		if (dt.time().hour() < 7) {
 			qWarning() << __FUNCTION__ << ": Too early, turning lights off";
-			turnLightsOn(false);
+			m_hue->turnLightsOff();
 		}
 		else if (dt.time().hour() > 17) {
 			qWarning() << __FUNCTION__ << ": Too late, turning lights off";
-			turnLightsOn(false);
+			m_hue->turnLightsOff();
 		}
 		else {
 			qWarning() << __FUNCTION__ << ": worktime, turning lights on";
-			m_ct = 300;
-			setLightCTColor(m_ct);
-			setLightBri(254);
+			m_hue->setLightsCTColor(300);
+			m_hue->setBrightness(254);
 		}
 	}
-/*		
-	if (t.hour() < 7) {
-		turnLightsOn(false);
-	}
-		m_ct = 153;
-		setLightCTColor(m_ct);
-	}
-	else if (t.hour() <= 14 && t.minute() <= 47) {
-		m_ct = 153 + ((t.hour() * 60) + t.minute()) - 360;
-		setLightCTColor(m_ct);
-	}
-	else {
-		m_ct = 500;
-		setLightCTColor(m_ct);
-	}
-*/
-	m_ProgTimer->start(1000 * 60);		// Run change once a minute
+	m_progTimer->start(1000 * 60);		// Run change once a minute
 }

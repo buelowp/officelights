@@ -7,18 +7,18 @@ QMAKE_CXXFLAGS += -std=c++11
 
 LIBS += -lhue -lxkey8
 
-SOURCES = AppService.cpp \
-		keystore.cpp \
-		main.cpp \
-		Program.cpp \
-		ButtonManager.cpp \
-		LEDManager.cpp \
-		HueManager.cpp
+SOURCES = \
+	keystore.cpp \
+	main.cpp \
+	Program.cpp \
+	ButtonManager.cpp \
+	LEDManager.cpp \
+	HueManager.cpp
 		
-HEADERS = AppService.h \
-		keystore.h \
-		Program.h \
-		ButtonManager.h \
-		LEDManager.h \
-		HueManager.h
+HEADERS = \
+	keystore.h \
+	Program.h \
+	ButtonManager.h \
+	LEDManager.h \
+	HueManager.h
 		

@@ -43,10 +43,9 @@
 #define PROGRAM_H_
 
 #include <QtCore/QtCore>
-#include <libhue/huebridgeconnection.h>
-#include <libhue/light.h>
-#include <libhue/lights.h>
-#include "keystore.h"
+#include "ButtonManager.h"
+#include "LEDManager.h"
+#include "HueManager.h"
 
 
 class Program : public QObject {
@@ -59,33 +58,23 @@ public:
 	void runWorkdayProgram();
 
 public slots:
-	void switchTimeout();
-	void progIntTimeout();
-	void bridgeFound();
-	void bridgeStatusChange(int);
-	void lightsBusyChanged();
-	void connectedBridgeChanged();
-	void apiKeyChanged();
+	void programIntTimeout();
+	void buttonPressed(int);
+	void hueBridgeFound();
+	void hueLightsFound();
+	void buttonsFound();
 
 signals:
 
 private:
-	void setTimeout();
-	void turnLightsOn(bool);
-	void setLightBri(int);
-	void setLightCTColor(quint16);
+	void setProgramTimeout();
+	void switchProgramTimeout();
 
-	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;
+	ButtonManager *m_buttons;
+	LEDManager *m_leds;
+	HueManager *m_hue;
 
-	HueBridgeConnection *m_Bridge;
-	Lights *m_Lights;
-	QSettings m_Settings;
-	KeyStore m_KeyStore;
-	QString m_apiKey;
-	QString m_ipAddr;
-	QTimer *m_ProgTimer;
-	bool m_on;
-	quint16 m_ct;
+	QTimer *m_progTimer;
 };
 
 #endif /* PROGRAM_H_ */
