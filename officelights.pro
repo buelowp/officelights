@@ -5,7 +5,7 @@ QT += network core
 
 QMAKE_CXXFLAGS += -std=c++11
 
-LIBS += -lhue -lxkey8
+LIBS += -lhue -lxkey8 -lfastled
 
 SOURCES = \
 	keystore.cpp \

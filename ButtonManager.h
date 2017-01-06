@@ -21,6 +21,7 @@ public:
 	void turnLedsOff();
 	void turnLedOff(int);
 	void turnLedOn(int);
+	bool buttonState(int);
 
 public slots:
 	void buttonDown(int, unsigned int);
@@ -34,6 +35,7 @@ signals:
 
 private:
 	XKey8 *m_buttonManager;
+	QVector<bool> m_buttonState;
 
 };
 

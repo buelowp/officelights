@@ -31,6 +31,9 @@ ButtonManager::ButtonManager(QObject *parent) : QObject(parent)
 	connect(m_buttonManager, SIGNAL(buttonUp(int)), this, SLOT(buttonUp(int)));
 
 	buttonManager = m_buttonManager;
+
+	for (int i = 0; i < 10; i++)
+		m_buttonState.push_back(false);
 }
 
 ButtonManager::~ButtonManager()
@@ -57,6 +60,7 @@ void ButtonManager::buttonDown(int button, unsigned int ts)
 void ButtonManager::buttonUp(int button)
 {
 	m_buttonManager->toggleButtonLEDState(button);
+	m_buttonState[button] = !m_buttonState[button];
 	emit buttonPressed(button);
 }
 
@@ -68,6 +72,8 @@ void ButtonManager::start()
 void ButtonManager::turnLedsOff()
 {
 	m_buttonManager->turnButtonLedsOff();
+	for (int i = 0; i < 10; i++)
+		m_buttonState[i] = false;
 }
 
 void ButtonManager::turnLedOn(int b)
@@ -76,4 +82,12 @@ void ButtonManager::turnLedOn(int b)
 
 void ButtonManager::turnLedOff(int b)
 {
+}
+
+bool ButtonManager::buttonState(int b)
+{
+	if (b < 11)
+		return m_buttonState[b];
+
+	return false;
 }

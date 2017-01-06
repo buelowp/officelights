@@ -55,26 +55,25 @@ public:
 	virtual ~Program();
 
 	void init();
-	void runWorkdayProgram();
 
 public slots:
-	void programIntTimeout();
 	void buttonPressed(int);
 	void hueBridgeFound();
 	void hueLightsFound();
 	void buttonsFound();
 
 signals:
+	void setBrightness(uint8_t);
+	void setRGB(uint8_t, uint8_t, uint8_t);
+	void turnLedsOff();
+	void runLedProgram(int);
 
 private:
-	void setProgramTimeout();
-	void switchProgramTimeout();
-
 	ButtonManager *m_buttons;
 	LEDManager *m_leds;
 	HueManager *m_hue;
 
-	QTimer *m_progTimer;
+	QThread *m_ledThread;
 };
 
 #endif /* PROGRAM_H_ */

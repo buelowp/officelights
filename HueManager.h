@@ -20,9 +20,11 @@ public:
 	HueManager(QObject *parent = 0);
 	virtual ~HueManager();
 
+	void runDailyProgram();
+
 public slots:
 //	void switchTimeout();
-//	void progIntTimeout();
+	void progIntTimeout();
 	void bridgeFound();
 	void bridgeStatusChange(int);
 	void lightsBusyChanged();
@@ -46,6 +48,8 @@ signals:
 	void hueLightsFound(int);
 
 private:
+	void setTimeout();
+
 	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;
 
 	HueBridgeConnection *m_Bridge;
@@ -54,6 +58,7 @@ private:
 	KeyStore m_KeyStore;
 	QString m_apiKey;
 	QString m_ipAddr;
+	QTimer *m_progTimer;
 	int m_ct;
 	bool m_on;
 };

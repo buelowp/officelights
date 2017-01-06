@@ -45,16 +45,19 @@ Program::Program(QObject *parent) : QObject(parent)
 {
 	m_buttons = new ButtonManager();
 	m_leds = new LEDManager();
-//	m_hue = new HueManager();
+	m_hue = new HueManager();
+	m_ledThread = new QThread();
+	m_leds->moveToThread(m_ledThread);
 
-//	m_progTimer = new QTimer(this);
-//	connect(m_progTimer, SIGNAL(timeout()), this, SLOT(progIntTimeout()));
-//	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
-//	connect(m_hue, SIGNAL(hueLightsFound()), this, SLOT(hueLightsFound()));
+	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
+	connect(m_hue, SIGNAL(hueLightsFound()), this, SLOT(hueLightsFound()));
 	connect(m_buttons, SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
 	connect(m_buttons, SIGNAL(ready()), this, SLOT(buttonsFound()));
-
-	m_buttons->start();
+	connect(this, SIGNAL(turnLedsOff()), m_leds, SLOT(turnOff()));
+	connect(this, SIGNAL(runLedProgram(int)), m_leds, SLOT(runProgram(int)));
+	connect(this, SIGNAL(setLedBrightess(uint8_t)), m_leds, SLOT(setBrightness(uint8_t)));
+	connect(m_ledThread, SIGNAL(started()), m_leds, SLOT(process()));
+	connect(m_ledThread, SIGNAL(finished()), m_ledThread, SLOT(deleteLater()));
 }
 
 Program::~Program()
@@ -63,16 +66,17 @@ Program::~Program()
 
 void Program::init()
 {
+	m_buttons->start();
+	m_ledThread->start();
 }
 
 void Program::hueBridgeFound()
 {
-
 }
 
 void Program::hueLightsFound()
 {
-
+	m_hue->runDailyProgram();
 }
 
 void Program::buttonsFound()
@@ -82,75 +86,24 @@ void Program::buttonsFound()
 
 void Program::buttonPressed(int b)
 {
-	m_buttons->turnLedOn(b);
-}
-
-void Program::switchProgramTimeout()
-{
-	runWorkdayProgram();
-}
-
-void Program::setProgramTimeout()
-{
-	QTime t = QTime::currentTime();
-
-	if (t.hour() < 6 || t.hour() >= 19) {
-		if (t.hour() < 6) {
-			int millisToWakeup = ((((6 - t.hour()) * 60) + (60 - t.minute())) * 60000);
-			QTimer::singleShot(millisToWakeup, this, SLOT(timeout()));
-		}
-		if (t.hour() >= 19) {
-			int millisToWakeup = (((24 - t.hour()) * 60) + (60 - t.minute()) * 60000);
-			QTimer::singleShot(millisToWakeup, this, SLOT(timeout()));
-		}
-	}
-}
-
-
-/**
- * \func void Program::progIntTimeout()
- * We assume this is called once a minute. Every minute, it either gets warmer
- * or cooler based on CT value and time of day. If it's morning, get cooler as
- * the morning gets later. If it's afternoon, get warmer. Don't get warmer than 500
- * which is the max value
- */
-void Program::programIntTimeout()
-{
-	QTime t = QTime::currentTime();
-
-	if (t.hour() < 7) {
-		qWarning() << __FUNCTION__ << ": Too early, turning lights off";
-		m_hue->turnLightsOn();
-	}
-	else if (t.hour() > 17)  {
-		qWarning() << __FUNCTION__ << ": Too late, turning lights off";
-		m_hue->turnLightsOff();
-	}
-	else {
-		qWarning() << __FUNCTION__ << ": worktime, turning lights on";
-		m_hue->setLightsCTColor(300);
-		m_hue->setBrightness(254);
-	}
-}
-
-void Program::runWorkdayProgram()
-{
-	QDateTime dt = QDateTime::currentDateTime();
-
-	if (dt.date().dayOfWeek() < 6) {
-		if (dt.time().hour() < 7) {
-			qWarning() << __FUNCTION__ << ": Too early, turning lights off";
-			m_hue->turnLightsOff();
-		}
-		else if (dt.time().hour() > 17) {
-			qWarning() << __FUNCTION__ << ": Too late, turning lights off";
+	switch(b) {
+	case 0:
+		if (m_buttons->buttonState(b)) {
 			m_hue->turnLightsOff();
 		}
 		else {
-			qWarning() << __FUNCTION__ << ": worktime, turning lights on";
-			m_hue->setLightsCTColor(300);
-			m_hue->setBrightness(254);
+			m_hue->runDailyProgram();
 		}
+		break;
+	case 1:
+		if (m_buttons->buttonState(b)) {
+			m_leds->turnOff();
+		}
+		else {
+			emit (runLedProgram(b));
+		}
+		break;
+	default:
+		break;
 	}
-	m_progTimer->start(1000 * 60);		// Run change once a minute
 }
