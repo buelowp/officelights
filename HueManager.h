@@ -47,6 +47,7 @@ public slots:
 signals:
 	void hueBridgeFound();
 	void hueLightsFound(int);
+	void dailyProgramComplete();
 
 private:
 	void setTimeout();

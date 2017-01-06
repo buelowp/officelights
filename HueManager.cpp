@@ -205,9 +205,11 @@ void HueManager::runDailyProgram()
 
 	if (dt.date().dayOfWeek() < 6) {
 		if (dt.time().hour() < 7) {
+			emit dailyProgramComplete();
 			turnLightsOff();
 		}
 		else if (dt.time().hour() > 17) {
+			emit dailyProgramComplete();
 			turnLightsOff();
 		}
 		else {

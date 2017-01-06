@@ -60,6 +60,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)));
 	connect(m_leds, SIGNAL(finished()), m_leds, SLOT(deleteLater()));
 	connect(m_leds, SIGNAL(programDone(int)), this, SLOT(ledProgramDone(int)));
+	connect(m_hue, SIGNAL(dailyProgramComplete()), this, SLOT(dailyProgramDone()));
 }
 
 Program::~Program()
@@ -89,6 +90,15 @@ void Program::hueLightsFound(int c)
 void Program::buttonsFound()
 {
 	m_buttons->turnLedsOff();
+}
+
+void Program::dailyProgramDone()
+{
+	if (m_currProgram == 0)
+		m_buttons->setButtonState(0, false);
+
+	if (m_currProgram > 0)
+		emit turnLedsOff();
 }
 
 void Program::ledProgramDone(int p)

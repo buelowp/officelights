@@ -62,6 +62,7 @@ public slots:
 	void hueLightsFound(int);
 	void buttonsFound();
 	void ledProgramDone(int);
+	void dailyProgramDone();
 
 signals:
 	void setLedBrightness(int);
