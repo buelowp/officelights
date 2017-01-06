@@ -86,6 +86,26 @@ void LEDManager::runProgram(int p)
 		m_currentProgram = p;
 		demo();
 		break;
+	case 4:
+		m_allowRun = true;
+		m_currentProgram = p;
+		pulse();
+		break;
+	case 5:
+		m_allowRun = true;
+		m_currentProgram = p;
+		green();
+		break;
+	case 8:
+		m_allowRun = true;
+		m_currentProgram = p;
+		yellow();
+		break;
+	case 9:
+		m_allowRun = true;
+		m_currentProgram = p;
+		red();
+		break;
 	default:
 		break;
 	}
@@ -95,6 +115,45 @@ void LEDManager::setBrightness(int b)
 {
 	FastLED.setBrightness((uint8_t)b);
 	FastLED.show();
+}
+
+void LEDManager::red()
+{
+	while (m_allowRun) {
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::Red;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+		QThread::msleep(100);
+	}
+	cleanUpProgram();
+}
+
+void LEDManager::yellow()
+{
+	while (m_allowRun) {
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::Yellow;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+		QThread::msleep(100);
+	}
+	cleanUpProgram();
+}
+
+void LEDManager::green()
+{
+	while (m_allowRun) {
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::Green;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+		QThread::msleep(100);
+	}
+	cleanUpProgram();
 }
 
 void LEDManager::setRGB(int r, int g, int b)
@@ -128,8 +187,8 @@ void LEDManager::cleanUpProgram()
         turnLedsOff();
         FastLED.show();
         m_allowRun = false;
+        emit programDone(m_currentProgram);
         m_currentProgram = -1;
-        emit programDone();
 }
 
 void LEDManager::fadeall()
@@ -137,6 +196,31 @@ void LEDManager::fadeall()
 	for(int i = 0; i < NUM_LEDS; i++) {
 		m_leds[i].nscale8(250);
 	}
+}
+
+void LEDManager::pulse()
+{
+	uint8_t brightness = 1;
+	int direction = 1;
+
+	for (int i = 0; i < NUM_LEDS; i++) {
+		m_leds[i] = CRGB::Green;
+	}
+	FastLED.setBrightness(brightness);
+	FastLED.show();
+
+	while (m_allowRun) {
+		brightness += direction;
+		if (brightness == 255)
+			direction = -1;
+		if (brightness == 0)
+			direction = 1;
+
+		FastLED.setBrightness(brightness);
+		FastLED.show();
+		QThread::msleep(10);
+	}
+	cleanUpProgram();
 }
 
 void LEDManager::cylon()

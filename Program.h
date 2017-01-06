@@ -61,7 +61,7 @@ public slots:
 	void hueBridgeFound();
 	void hueLightsFound(int);
 	void buttonsFound();
-	void ledProgramDone();
+	void ledProgramDone(int);
 
 signals:
 	void setLedBrightness(int);
@@ -75,6 +75,7 @@ private:
 	HueManager *m_hue;
 
 	int m_nextProgram;
+	int m_currProgram;
 };
 
 #endif /* PROGRAM_H_ */

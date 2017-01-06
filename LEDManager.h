@@ -29,8 +29,6 @@ public:
 	LEDManager(QObject *parent = 0);
 	virtual ~LEDManager();
 
-	bool isEnabled() { return m_enabled; }
-
 public slots:
 	void setBrightness(int);
 	void setRGB(int, int, int);
@@ -39,7 +37,7 @@ public slots:
 	void endProgram();
 
 signals:
-	void programDone();
+	void programDone(int);
 
 protected:
     void run() Q_DECL_OVERRIDE;
@@ -60,6 +58,10 @@ private:
 	void confetti();
 	void turnLedsOff();
 	void cleanUpProgram();
+	void pulse();
+	void red();
+	void yellow();
+	void green();
 
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;

@@ -44,6 +44,7 @@
 Program::Program(QObject *parent) : QObject(parent)
 {
 	m_nextProgram = -1;
+	m_currProgram = -1;
 
 	m_buttons = new ButtonManager();
 	m_leds = new LEDManager();
@@ -58,7 +59,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(this, SIGNAL(runLedProgram(int)), m_leds, SLOT(setProgram(int)));
 	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)));
 	connect(m_leds, SIGNAL(finished()), m_leds, SLOT(deleteLater()));
-	connect(m_leds, SIGNAL(programDone()), this, SLOT(ledProgramDone()));
+	connect(m_leds, SIGNAL(programDone(int)), this, SLOT(ledProgramDone(int)));
 }
 
 Program::~Program()
@@ -90,14 +91,16 @@ void Program::buttonsFound()
 	m_buttons->turnLedsOff();
 }
 
-void Program::ledProgramDone()
+void Program::ledProgramDone(int p)
 {
+	qWarning() << __PRETTY_FUNCTION__ << ": Ended program" << p;
+	m_buttons->setButtonState(p, false);
 	if (m_nextProgram != -1) {
-		m_buttons->setButtonState(m_nextProgram, true);
-		emit(runLedProgram(m_nextProgram));
+		m_currProgram = m_nextProgram;
+		m_buttons->setButtonState(m_currProgram, true);
+		emit(runLedProgram(m_currProgram));
+		m_nextProgram = -1;
 	}
-
-	m_nextProgram = -1;
 }
 
 void Program::buttonPressed(int b)
@@ -115,20 +118,24 @@ void Program::buttonPressed(int b)
 	case 1:
 	case 2:
 	case 3:
-		qWarning() << __PRETTY_FUNCTION__ << ": m_nextProgram =" << m_nextProgram;
-		if (!m_buttons->buttonState(b)) {
-			emit(turnLedsOff());
+	case 4:
+	case 5:
+	case 8:
+	case 9:
+		qWarning() << __PRETTY_FUNCTION__ << ": m_currProgram =" << m_currProgram << ", m_nextProgram =" << m_nextProgram;
+		if (m_currProgram == -1) {
+			emit runLedProgram(b);
+			m_buttons->setButtonState(b, true);
+			m_currProgram = b;
+		}
+		else if (m_currProgram == b) {
 			m_nextProgram = -1;
+			m_currProgram = -1;
+			emit turnLedsOff();
 		}
 		else {
-			if (m_nextProgram == -1) {
-				qWarning() << __PRETTY_FUNCTION__ << ": running program" << b;
-				emit(runLedProgram(b));
-			}
-			else {
-				m_nextProgram = b;
-				emit(turnLedsOff());
-			}
+			m_nextProgram = b;
+			emit turnLedsOff();
 		}
 		break;
 	default:
