@@ -7,7 +7,7 @@
 
 #include "LEDManager.h"
 
-LEDManager::LEDManager(QObject *parent) : QObject(parent)
+LEDManager::LEDManager(QObject *parent) : QThread(parent)
 {
 	m_enabled = true;
 	m_allowRun = false;
@@ -35,7 +35,7 @@ LEDManager::~LEDManager()
 {
 }
 
-void LEDManager::process()
+void LEDManager::run()
 {
 	qWarning() << __PRETTY_FUNCTION__;
 	while (1)

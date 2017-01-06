@@ -74,7 +74,6 @@ private:
 	LEDManager *m_leds;
 	HueManager *m_hue;
 
-	QThread *m_ledThread;
 	int m_nextProgram;
 };
 

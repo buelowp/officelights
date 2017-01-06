@@ -48,9 +48,6 @@ Program::Program(QObject *parent) : QObject(parent)
 	m_buttons = new ButtonManager();
 	m_leds = new LEDManager();
 	m_hue = new HueManager();
-	m_ledThread = new QThread();
-
-	m_leds->moveToThread(m_ledThread);
 
 	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
 	connect(m_hue, SIGNAL(hueLightsFound(int)), this, SLOT(hueLightsFound(int)));
@@ -59,8 +56,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(this, SIGNAL(turnLedsOff()), m_leds, SLOT(turnOff()), Qt::QueuedConnection);
 	connect(this, SIGNAL(runLedProgram(int)), m_leds, SLOT(runProgram(int)), Qt::QueuedConnection);
 	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)), Qt::QueuedConnection);
-	connect(m_ledThread, SIGNAL(started()), m_leds, SLOT(process()));
-	connect(m_ledThread, SIGNAL(finished()), m_ledThread, SLOT(deleteLater()));
+	connect(m_leds, SIGNAL(finished()), m_leds, SLOT(deleteLater()));
 	connect(m_leds, SIGNAL(programDone()), this, SLOT(ledProgramDone()));
 }
 
@@ -71,7 +67,7 @@ Program::~Program()
 void Program::init()
 {
 	m_buttons->start();
-	m_ledThread->start();
+	m_leds->start();
 }
 
 void Program::hueBridgeFound()
@@ -109,7 +105,7 @@ void Program::buttonPressed(int b)
 			m_hue->turnLightsOff();
 		}
 		else {
-			m_hue->runDailyProgram();
+			m_hue->turnLightsOn();
 		}
 		break;
 	case 1:
@@ -117,15 +113,17 @@ void Program::buttonPressed(int b)
 	case 3:
 		qWarning() << __PRETTY_FUNCTION__ << ": m_nextProgram =" << m_nextProgram;
 		if (!m_buttons->buttonState(b)) {
-			m_leds->turnOff();
+			emit(turnLedsOff());
 			m_nextProgram = -1;
 		}
 		else {
-			if (m_nextProgram == -1)
+			if (m_nextProgram == -1) {
+				qWarning() << __PRETTY_FUNCTION__ << ": running program" << b;
 				emit(runLedProgram(b));
+			}
 			else {
 				m_nextProgram = b;
-				m_leds->turnOff();
+				emit(turnLedsOff());
 			}
 		}
 		break;

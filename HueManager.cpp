@@ -120,6 +120,7 @@ void HueManager::turnLightOn(int l)
 		light->setOn(true);
 	}
 	m_on = true;
+	setTimeout();
 }
 
 void HueManager::turnLightOff(int l)

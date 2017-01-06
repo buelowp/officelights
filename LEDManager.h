@@ -23,7 +23,7 @@
 #define FRAMES_PER_SECOND 	120
 
 
-class LEDManager : public QObject {
+class LEDManager : public QThread {
 	Q_OBJECT
 public:
 	LEDManager(QObject *parent = 0);
@@ -32,7 +32,6 @@ public:
 	bool isEnabled() { return m_enabled; }
 
 public slots:
-	void process();
 	void setBrightness(int);
 	void setRGB(int, int, int);
 	void turnOff();
@@ -40,6 +39,9 @@ public slots:
 
 signals:
 	void programDone();
+
+protected:
+    void run() Q_DECL_OVERRIDE;
 
 private:
 	void cylon();
