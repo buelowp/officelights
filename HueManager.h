@@ -42,6 +42,8 @@ public slots:
 	void setLightsCTColor(quint16);
 	void setLightCTColor(int, quint16);
 
+	void setLightsColor(QColor);
+
 signals:
 	void hueBridgeFound();
 	void hueLightsFound(int);

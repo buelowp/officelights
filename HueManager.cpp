@@ -156,6 +156,13 @@ void HueManager::setBrightness(int b, int l)
 	}
 }
 
+void HueManager::setLightsColor(QColor c)
+{
+	for (int i = 0; i < m_Lights->rowCount(); i++) {
+		m_Lights->get(i)->setColor(c);
+	}
+}
+
 void HueManager::setLightsCTColor(quint16 ct)
 {
 	if (ct <= 500 || ct >= 153) {
