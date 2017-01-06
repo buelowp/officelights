@@ -43,8 +43,14 @@ ButtonManager::~ButtonManager()
 
 void ButtonManager::setButtonState(int b, bool s)
 {
-	if (b <= 10)
+	if (b <= 10) {
+		if (s)
+			m_buttonManager->setButtonBlueLEDState(b, LEDMode::ON);
+		else
+			m_buttonManager->setButtonBlueLEDState(b, LEDMode::OFF);
+
 		m_buttonState[b] = s;
+	}
 }
 
 void ButtonManager::panelConnected()
@@ -60,7 +66,8 @@ void ButtonManager::panelDisconnected()
 
 void ButtonManager::buttonDown(int button, unsigned int ts)
 {
-
+	Q_UNUSED(button)
+	Q_UNUSED(ts)
 }
 
 void ButtonManager::buttonUp(int button)
@@ -82,11 +89,11 @@ void ButtonManager::turnLedsOff()
 		m_buttonState[i] = false;
 }
 
-void ButtonManager::turnLedOn(int b)
+void ButtonManager::turnLedOn(int)
 {
 }
 
-void ButtonManager::turnLedOff(int b)
+void ButtonManager::turnLedOff(int)
 {
 }
 
