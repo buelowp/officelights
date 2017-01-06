@@ -33,8 +33,8 @@ public:
 
 public slots:
 	void process();
-	void setBrightness(uint8_t);
-	void setRGB(uint8_t, uint8_t, uint8_t);
+	void setBrightness(int);
+	void setRGB(int, int, int);
 	void turnOff();
 	void runProgram(int);
 

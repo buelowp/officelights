@@ -37,12 +37,15 @@ LEDManager::~LEDManager()
 
 void LEDManager::process()
 {
+	qWarning() << __PRETTY_FUNCTION__;
 	while (1)
 		QThread::sleep(100);
+	qWarning() << __PRETTY_FUNCTION__ << ": exiting thread";
 }
 
 void LEDManager::runProgram(int p)
 {
+	qWarning() << __PRETTY_FUNCTION__ << ": p =" << p;
 	switch (p) {
 	case 1:
 		m_allowRun = true;
@@ -60,19 +63,19 @@ void LEDManager::runProgram(int p)
 		break;
 	}
 }
-void LEDManager::setBrightness(uint8_t b)
+void LEDManager::setBrightness(int b)
 {
-	FastLED.setBrightness(b);
+	FastLED.setBrightness((uint8_t)b);
 	FastLED.show();
 }
 
-void LEDManager::setRGB(uint8_t r, uint8_t g, uint8_t b)
+void LEDManager::setRGB(int r, int g, int b)
 {
 	CRGB c;
 
-	c.r = r;
-	c.g = g;
-	c.b = b;
+	c.r = (uint8_t)r;
+	c.g = (uint8_t)g;
+	c.b = (uint8_t)b;
 
 	for (int i =  0; i < NUM_LEDS; i++) {
 		m_leds[i] = c;

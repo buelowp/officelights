@@ -64,8 +64,8 @@ public slots:
 	void ledProgramDone();
 
 signals:
-	void setLedBrightness(uint8_t);
-	void setRGB(uint8_t, uint8_t, uint8_t);
+	void setLedBrightness(int);
+	void setRGB(int, int, int);
 	void turnLedsOff();
 	void runLedProgram(int);
 
