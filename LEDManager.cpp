@@ -134,7 +134,9 @@ void LEDManager::cylon()
 
 void LEDManager::snow()
 {
-
+	FastLED.clear();
+	FastLED.show();
+	emit programDone();
 }
 
 // random colored speckles that blink in and fade smoothly

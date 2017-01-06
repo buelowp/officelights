@@ -41,6 +41,12 @@ ButtonManager::~ButtonManager()
 	delete m_buttonManager;
 }
 
+void ButtonManager::setButtonState(int b, bool s)
+{
+	if (b <= 10)
+		m_buttonState[b] = s;
+}
+
 void ButtonManager::panelConnected()
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": Buttons seem to be ready to use";

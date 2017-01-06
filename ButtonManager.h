@@ -22,6 +22,7 @@ public:
 	void turnLedOff(int);
 	void turnLedOn(int);
 	bool buttonState(int);
+	void setButtonState(int, bool);
 
 public slots:
 	void buttonDown(int, unsigned int);

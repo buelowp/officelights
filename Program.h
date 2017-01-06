@@ -59,11 +59,12 @@ public:
 public slots:
 	void buttonPressed(int);
 	void hueBridgeFound();
-	void hueLightsFound();
+	void hueLightsFound(int);
 	void buttonsFound();
+	void ledProgramDone();
 
 signals:
-	void setBrightness(uint8_t);
+	void setLedBrightness(uint8_t);
 	void setRGB(uint8_t, uint8_t, uint8_t);
 	void turnLedsOff();
 	void runLedProgram(int);
@@ -74,6 +75,7 @@ private:
 	HueManager *m_hue;
 
 	QThread *m_ledThread;
+	int m_nextProgram;
 };
 
 #endif /* PROGRAM_H_ */
