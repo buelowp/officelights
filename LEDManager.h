@@ -35,7 +35,8 @@ public slots:
 	void setBrightness(int);
 	void setRGB(int, int, int);
 	void turnOff();
-	void runProgram(int);
+	void setProgram(int);
+	void endProgram();
 
 signals:
 	void programDone();
@@ -44,6 +45,7 @@ protected:
     void run() Q_DECL_OVERRIDE;
 
 private:
+	void runProgram(int);
 	void cylon();
 	void snow();
 	void demo();
@@ -56,10 +58,13 @@ private:
 	void bpm();
 	void sinelon();
 	void confetti();
+	void turnLedsOff();
+	void cleanUpProgram();
 
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;
 	bool m_allowRun;
+	int m_currentProgram;
 
 	uint8_t m_CurrentPatternNumber = 0; // Index number of which pattern is current
 	uint8_t m_hue = 0; 					// rotating "base color" used by many of the patterns

@@ -49,13 +49,14 @@ Program::Program(QObject *parent) : QObject(parent)
 	m_leds = new LEDManager();
 	m_hue = new HueManager();
 
+
 	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
 	connect(m_hue, SIGNAL(hueLightsFound(int)), this, SLOT(hueLightsFound(int)));
 	connect(m_buttons, SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
 	connect(m_buttons, SIGNAL(ready()), this, SLOT(buttonsFound()));
-	connect(this, SIGNAL(turnLedsOff()), m_leds, SLOT(turnOff()), Qt::QueuedConnection);
-	connect(this, SIGNAL(runLedProgram(int)), m_leds, SLOT(runProgram(int)), Qt::QueuedConnection);
-	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)), Qt::QueuedConnection);
+	connect(this, SIGNAL(turnLedsOff()), m_leds, SLOT(turnOff()));
+	connect(this, SIGNAL(runLedProgram(int)), m_leds, SLOT(setProgram(int)));
+	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)));
 	connect(m_leds, SIGNAL(finished()), m_leds, SLOT(deleteLater()));
 	connect(m_leds, SIGNAL(programDone()), this, SLOT(ledProgramDone()));
 }
@@ -68,6 +69,7 @@ void Program::init()
 {
 	m_buttons->start();
 	m_leds->start();
+	qWarning() << __PRETTY_FUNCTION__ << ": thread" << QThread::currentThreadId();
 }
 
 void Program::hueBridgeFound()
@@ -90,8 +92,10 @@ void Program::buttonsFound()
 
 void Program::ledProgramDone()
 {
-	if (m_nextProgram != -1)
+	if (m_nextProgram != -1) {
+		m_buttons->setButtonState(m_nextProgram, true);
 		emit(runLedProgram(m_nextProgram));
+	}
 
 	m_nextProgram = -1;
 }

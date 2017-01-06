@@ -11,6 +11,7 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
 {
 	m_enabled = true;
 	m_allowRun = false;
+	m_currentProgram = -1;
 
     try {
         // addLeds may throw an exception if the SPI interface cannot be found.
@@ -37,32 +38,59 @@ LEDManager::~LEDManager()
 
 void LEDManager::run()
 {
-	qWarning() << __PRETTY_FUNCTION__;
-	while (1)
-		QThread::sleep(100);
+	qWarning() << __PRETTY_FUNCTION__ << ": thread ID" << QThread::currentThreadId();
+	while (1) {
+		if (m_currentProgram > 0) {
+			runProgram(m_currentProgram);
+		}
+		QThread::sleep(1);
+	}
 	qWarning() << __PRETTY_FUNCTION__ << ": exiting thread";
+}
+
+void LEDManager::turnLedsOff()
+{
+	for (int i = 0; i < NUM_LEDS; i++)
+		m_leds[i] = CRGB::Black;
+}
+
+void LEDManager::setProgram(int p)
+{
+	m_currentProgram = p;
+	m_allowRun = true;
+}
+
+void LEDManager::endProgram()
+{
+	m_allowRun = false;
 }
 
 void LEDManager::runProgram(int p)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": p =" << p;
+        qWarning() << __PRETTY_FUNCTION__ << ": thread" << QThread::currentThreadId();
+
 	switch (p) {
 	case 1:
 		m_allowRun = true;
+		m_currentProgram = p;
 		cylon();
 		break;
 	case 2:
 		m_allowRun = true;
+		m_currentProgram = p;
 		snow();
 		break;
 	case 3:
 		m_allowRun = true;
+		m_currentProgram = p;
 		demo();
 		break;
 	default:
 		break;
 	}
 }
+
 void LEDManager::setBrightness(int b)
 {
 	FastLED.setBrightness((uint8_t)b);
@@ -90,7 +118,18 @@ void LEDManager::setRGB(int r, int g, int b)
  */
 void LEDManager::turnOff()
 {
-	m_allowRun = false;
+	if (m_allowRun)
+		m_allowRun = false;
+}
+
+void LEDManager::cleanUpProgram()
+{
+	qWarning() << __PRETTY_FUNCTION__ << ": cleaning up program" << m_currentProgram;
+        turnLedsOff();
+        FastLED.show();
+        m_allowRun = false;
+        m_currentProgram = -1;
+        emit programDone();
 }
 
 void LEDManager::fadeall()
@@ -130,16 +169,12 @@ void LEDManager::cylon()
 			QThread::msleep(10);
 		}
 	}
-	FastLED.clear();
-	FastLED.show();
-	emit programDone();
+	cleanUpProgram();
 }
 
 void LEDManager::snow()
 {
-	FastLED.clear();
-	FastLED.show();
-	emit programDone();
+	cleanUpProgram();
 }
 
 // random colored speckles that blink in and fade smoothly
@@ -221,7 +256,5 @@ void LEDManager::demo()
 		EVERY_N_MILLISECONDS( 20 ) { m_hue++; } // slowly cycle the "base color" through the rainbow
 		EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
 	}
-	FastLED.clear();
-	FastLED.show();
-	emit programDone();
+	cleanUpProgram();
 }
