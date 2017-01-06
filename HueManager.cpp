@@ -207,20 +207,24 @@ void HueManager::runDailyProgram()
 		if (dt.time().hour() < 7) {
 			emit dailyProgramComplete();
 			turnLightsOff();
+			m_progTimer->stop();
+			setTimeout();
 		}
 		else if (dt.time().hour() > 17) {
 			emit dailyProgramComplete();
 			turnLightsOff();
+			m_progTimer->stop();
+			setTimeout();
 		}
 		else {
 			if (!m_on) {
 				turnLightsOn();
 				setLightsCTColor(300);
 				setBrightness(254);
+				m_progTimer->start(1000 * 60);		// Run change once a minute
 			}
 		}
 	}
-	m_progTimer->start(1000 * 60);		// Run change once a minute
 }
 
 void HueManager::setTimeout()
