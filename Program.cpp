@@ -106,17 +106,30 @@ void Program::ledProgramDone(int p)
 void Program::buttonPressed(int b)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": b =" << b << ", state is" << m_buttons->buttonState(b);
+	if (b != 0)
+		m_buttons->setButtonState(0, false);
+
 	switch(b) {
 	case 0:
-		if (m_currProgram > 0) {
+		if (m_currProgram == -1) {
 			m_hue->setLightsCTColor(300);
+			m_buttons->setButtonState(0, true);
+			m_currProgram = b;
 		}
-		else if (m_buttons->buttonState(b) == false) {
+		else if (m_currProgram == b) {
+			m_nextProgram = -1;
+			m_currProgram = -1;
 			m_hue->turnLightsOff();
+			m_buttons->setButtonState(0, false);
 		}
 		else {
 			m_hue->setLightsCTColor(300);
 			m_hue->turnLightsOn();
+			m_buttons->setButtonState(0, true);
+			m_buttons->setButtonState(m_currProgram, true);
+			m_currProgram = 0;
+			m_nextProgram = -1;
+			emit turnLedsOff();
 		}
 		break;
 	case 1:
@@ -140,8 +153,38 @@ void Program::buttonPressed(int b)
 		break;
 	case 5:
 		m_hue->setLightsColor(QColor(Qt::green));
+		if (m_currProgram == -1) {
+			emit runLedProgram(b);
+			m_buttons->setButtonState(b, true);
+			m_currProgram = b;
+		}
+		else if (m_currProgram == b) {
+			m_nextProgram = -1;
+			m_currProgram = -1;
+			emit turnLedsOff();
+		}
+		else {
+			m_nextProgram = b;
+			emit turnLedsOff();
+		}
+		break;
 	case 8:
 		m_hue->setLightsColor(QColor(Qt::yellow));
+		if (m_currProgram == -1) {
+			emit runLedProgram(b);
+			m_buttons->setButtonState(b, true);
+			m_currProgram = b;
+		}
+		else if (m_currProgram == b) {
+			m_nextProgram = -1;
+			m_currProgram = -1;
+			emit turnLedsOff();
+		}
+		else {
+			m_nextProgram = b;
+			emit turnLedsOff();
+		}
+		break;
 	case 9:
 		m_hue->setLightsColor(QColor(Qt::red));
 		if (m_currProgram == -1) {
