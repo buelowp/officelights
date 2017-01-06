@@ -20,10 +20,9 @@ public:
 	HueManager(QObject *parent = 0);
 	virtual ~HueManager();
 
-	void runDailyProgram();
-
 public slots:
 //	void switchTimeout();
+	void runDailyProgram();
 	void progIntTimeout();
 	void bridgeFound();
 	void bridgeStatusChange(int);
