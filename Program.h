@@ -63,6 +63,7 @@ public slots:
 	void buttonsFound();
 	void ledProgramDone(int);
 	void dailyProgramDone();
+	void runDailyProgram();
 
 signals:
 	void setLedBrightness(int);

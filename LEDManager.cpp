@@ -38,7 +38,8 @@ LEDManager::~LEDManager()
 
 void LEDManager::run()
 {
-	qWarning() << __PRETTY_FUNCTION__ << ": thread ID" << QThread::currentThreadId();
+	qWarning() << __PRETTY_FUNCTION__ << ": Starting LED control thread";
+	turnLedsOff();
 	while (1) {
 		if (m_currentProgram > 0) {
 			runProgram(m_currentProgram);
@@ -52,6 +53,8 @@ void LEDManager::turnLedsOff()
 {
 	for (int i = 0; i < NUM_LEDS; i++)
 		m_leds[i] = CRGB::Black;
+
+	FastLED.show();
 }
 
 void LEDManager::setProgram(int p)
@@ -68,7 +71,6 @@ void LEDManager::endProgram()
 void LEDManager::runProgram(int p)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": p =" << p;
-        qWarning() << __PRETTY_FUNCTION__ << ": thread" << QThread::currentThreadId();
 
 	switch (p) {
 	case 1:

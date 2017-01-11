@@ -9,7 +9,6 @@
 
 HueManager::HueManager(QObject *parent) : QObject(parent)
 {
-	m_on = false;
 	m_ct = 153;
 	m_BridgeStatus = HueBridgeConnection::BridgeStatus::BridgeStatusSearching;
 	m_Lights = new Lights();
@@ -58,7 +57,6 @@ void HueManager::lightsBusyChanged()
 			light->setOn(false);
 		}
 	}
-	m_on = false;
 	emit hueLightsFound(m_Lights->rowCount());
 }
 
@@ -99,31 +97,23 @@ void HueManager::turnLightsOn()
 		Light *light = m_Lights->get(i);
 		light->setOn(true);
 	}
-	m_on = true;
 }
 
 void HueManager::turnLightsOff()
 {
-	if (m_on) {
-		for (int i = 0; i < m_Lights->rowCount(); i++) {
-			Light *light = m_Lights->get(i);
-			light->setOn(false);
-		}
-		m_on = false;
-		m_progTimer->stop();
-		setTimeout();
+	for (int i = 0; i < m_Lights->rowCount(); i++) {
+		Light *light = m_Lights->get(i);
+		light->setOn(false);
 	}
+	m_progTimer->stop();
+	setTimeout();
 }
 
 void HueManager::turnLightOn(int l)
 {
-	if (!m_on) {
-		if (l < m_Lights->rowCount()) {
-			Light *light = m_Lights->get(l);
-			light->setOn(true);
-		}
-		m_on = true;
-		setTimeout();
+	if (l < m_Lights->rowCount()) {
+		Light *light = m_Lights->get(l);
+		light->setOn(true);
 	}
 }
 
@@ -133,7 +123,6 @@ void HueManager::turnLightOff(int l)
 		Light *light = m_Lights->get(l);
 		light->setOn(false);
 	}
-	m_on = false;
 }
 
 void HueManager::setBrightness(int b)
@@ -158,6 +147,7 @@ void HueManager::setBrightness(int b, int l)
 
 void HueManager::setLightsColor(QColor c)
 {
+	m_progTimer->stop();
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		m_Lights->get(i)->setColor(c);
 	}
@@ -210,19 +200,18 @@ void HueManager::runDailyProgram()
 			m_progTimer->stop();
 			setTimeout();
 		}
-		else if (dt.time().hour() > 17) {
+		else if (dt.time().hour() > 16) {
 			emit dailyProgramComplete();
 			turnLightsOff();
 			m_progTimer->stop();
 			setTimeout();
 		}
 		else {
-			if (!m_on) {
-				turnLightsOn();
-				setLightsCTColor(300);
-				setBrightness(254);
+			turnLightsOn();
+			setLightsCTColor(300);
+			setBrightness(254);
+			if (!m_progTimer->isActive())
 				m_progTimer->start(1000 * 60);		// Run change once a minute
-			}
 		}
 	}
 }
