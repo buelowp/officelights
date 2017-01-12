@@ -27,6 +27,7 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 	m_progTimer = new QTimer(this);
 	m_apiKey = m_KeyStore.apiKey();
 	m_ipAddr = m_KeyStore.ipAddr();
+
 	if (m_apiKey.size()) {
 		if (m_ipAddr.size())
 			m_Bridge = HueBridgeConnection::instance(m_apiKey, m_ipAddr);
@@ -166,7 +167,7 @@ void HueManager::setLightsColor(QColor c)
 	}
 }
 
-void HueManager::setLightColor(QColor c)
+void HueManager::setLightColor(int l, QColor c)
 {
 	if (l < m_Lights->rowCount()) {
 		Light *light = m_Lights->get(l);
@@ -194,20 +195,11 @@ void HueManager::setLightCTColor(int l, quint16 ct)
 	}
 }
 
-void HueManager::progIntTimeout()
+/** Does not turn off the lights, used to stop the timer **/
+void HueManager::endDailyProgram()
 {
-	QTime t = QTime::currentTime();
-
-	if (t.hour() < 7) {
-		turnLightsOn();
-	}
-	else if (t.hour() > 17)  {
-		turnLightsOff();
-	}
-	else {
-		setLightsCTColor(300);
-		setBrightness(254);
-	}
+	if (m_progTimer->isActive())
+		m_progTimer->stop();
 }
 
 void HueManager::runDailyProgram()
@@ -228,28 +220,41 @@ void HueManager::runDailyProgram()
 			setTimeout();
 		}
 		else {
-			turnLightsOn();
-			setLightsCTColor(300);
-			setBrightness(254);
-			if (!m_progTimer->isActive())
+			if (!m_progTimer->isActive()) {
 				m_progTimer->start(1000 * 60);		// Run change once a minute
+				turnLightsOn();
+				setLightsCTColor(300);
+				setBrightness(254);
+			}
 		}
 	}
+}
+
+void HueManager::switchDailyProgramState()
+{
+	if (m_progTimer->isActive()) {
+		turnLightsOff();
+		emit dailyProgramComplete();
+	}
+	else
+		setTimeout();
 }
 
 void HueManager::setTimeout()
 {
         QTime t = QTime::currentTime();
 
-        if (t.hour() < 6 || t.hour() >= 19) {
+        if (t.hour() < 6 || t.hour() >= 16) {
                 if (t.hour() < 6) {
                         int millisToWakeup = ((((6 - t.hour()) * 60) + (60 - t.minute())) * 60000);
                         QTimer::singleShot(millisToWakeup, this, SLOT(runDailyProgram()));
                 }
-                if (t.hour() >= 19) {
+                else {
                         int millisToWakeup = (((24 - t.hour()) * 60) + (60 - t.minute()) * 60000);
                         QTimer::singleShot(millisToWakeup, this, SLOT(runDailyProgram()));
                 }
         }
+        else
+        	runDailyProgram();
 }
 

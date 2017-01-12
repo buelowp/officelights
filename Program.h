@@ -40,19 +40,25 @@ public slots:
 	void hueLightsFound(int);
 	void buttonsFound();
 	void ledProgramDone(int);
-	void dailyProgramDone();
 	void runDailyProgram();
+	void endDailyProgram();
+	void runHueAltProgram();
 
 signals:
 	void setLedBrightness(int);
 	void setRGB(int, int, int);
 	void turnLedsOff();
 	void runLedProgram(int);
+	void startDailyProgram();
+	void hueProgramStarted();
+	void hueProgramEnded();
 
 private:
 	ButtonManager *m_buttons;
 	LEDManager *m_leds;
 	HueManager *m_hue;
+	QStateMachine *m_huesm;
+	QStateMachine *m_ledsm;
 
 	int m_nextProgram;
 	int m_currProgram;

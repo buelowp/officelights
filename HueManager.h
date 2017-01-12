@@ -32,10 +32,11 @@ public:
 	HueManager(QObject *parent = 0);
 	virtual ~HueManager();
 
+	bool isDailyActive() { return m_progTimer->isActive(); }
+
 public slots:
 //	void switchTimeout();
 	void runDailyProgram();
-	void progIntTimeout();
 	void bridgeFound();
 	void bridgeStatusChange(int);
 	void lightsBusyChanged();
@@ -55,7 +56,10 @@ public slots:
 	void setLightCTColor(int, quint16);
 
 	void setLightsColor(QColor);
-	void setLightColor(QColor c);
+	void setLightColor(int, QColor);
+
+	void switchDailyProgramState();
+	void endDailyProgram();
 
 
 signals:
@@ -76,7 +80,6 @@ private:
 	QString m_ipAddr;
 	QTimer *m_progTimer;
 	int m_ct;
-	bool m_on;
 };
 
 #endif /* HUEMANAGER_H_ */

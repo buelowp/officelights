@@ -28,6 +28,29 @@ Program::Program(QObject *parent) : QObject(parent)
 	m_leds = new LEDManager();
 	m_hue = new HueManager();
 
+	m_huesm = new QStateMachine(this);
+	m_ledsm = new QStateMachine(this);
+
+	QState *hue_off = new QState();
+	QState *hue_dp = new QState();
+	QState *hue_other = new QState();
+
+	hue_off->addTransition(this, SIGNAL(startDailyProgram()), hue_dp);
+	hue_off->addTransition(this, SIGNAL(hueProgramStarted()), hue_other);
+	hue_dp->addTransition(m_hue, SIGNAL(dailyProgramComplete()), hue_off);
+	hue_dp->addTransition(this, SIGNAL(hueProgramStarted()), hue_other);
+	hue_other->addTransition(this, SIGNAL(hueProgramEnded()), hue_off);
+	hue_other->addTransition(this, SIGNAL(startDailyProgram()), hue_dp);
+
+	connect(hue_dp, SIGNAL(entered()), this, SLOT(runDailyProgram()));
+	connect(hue_dp, SIGNAL(exited()), this, SLOT(endDailyProgram()));
+	connect(hue_dp, SIGNAL(entered()), this, SLOT(runHueAltProgram()));
+
+	m_huesm->addState(hue_off);
+	m_huesm->addState(hue_dp);
+	m_huesm->addState(hue_other);
+	m_huesm->setInitialState(hue_off);
+	m_huesm->start();
 
 	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
 	connect(m_hue, SIGNAL(hueLightsFound(int)), this, SLOT(hueLightsFound(int)));
@@ -38,7 +61,6 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)));
 	connect(m_leds, SIGNAL(finished()), m_leds, SLOT(deleteLater()));
 	connect(m_leds, SIGNAL(programDone(int)), this, SLOT(ledProgramDone(int)));
-	connect(m_hue, SIGNAL(dailyProgramComplete()), this, SLOT(dailyProgramDone()));
 }
 
 Program::~Program()
@@ -47,46 +69,42 @@ Program::~Program()
 
 void Program::init()
 {
+	qWarning() << __PRETTY_FUNCTION__;
 	m_buttons->start();
 	m_leds->start();
 }
 
 void Program::hueBridgeFound()
 {
+	qWarning() << __PRETTY_FUNCTION__;
 }
 
 void Program::hueLightsFound(int c)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": found" << c << "lights";
 	if (c > 0) {
-		m_hue->runDailyProgram();
-		m_buttons->setButtonState(0, true);
-		m_currProgram = 0;
+		emit startDailyProgram();
 	}
 }
 
 void Program::buttonsFound()
 {
+	qWarning() << __PRETTY_FUNCTION__;
 	m_buttons->turnLedsOff();
-}
-
-void Program::dailyProgramDone()
-{
-	if (m_currProgram == 0)
-		m_buttons->setButtonState(0, false);
-
-	if (m_currProgram > 0)
-		emit turnLedsOff();
-
-	m_currProgram = -1;
 }
 
 void Program::runDailyProgram()
 {
-	qWarning() << __PRETTY_FUNCTION__ << ": running daily program";
+	qWarning() << __PRETTY_FUNCTION__;
 	m_hue->runDailyProgram();
 	m_buttons->setButtonState(0, true);
 	m_currProgram = 0;
+}
+
+void Program::endDailyProgram()
+{
+	qWarning() << __PRETTY_FUNCTION__;
+	m_buttons->setButtonState(0, false);
 }
 
 void Program::ledProgramDone(int p)
@@ -95,30 +113,25 @@ void Program::ledProgramDone(int p)
 	m_buttons->setButtonState(p, false);
 }
 
+void Program::runHueAltProgram()
+{
+	qWarning() << __PRETTY_FUNCTION__;
+	m_hue->endDailyProgram();
+}
+
 void Program::buttonPressed(int b)
 {
-	qWarning() << __PRETTY_FUNCTION__ << ": b =" << b << ", state is" << m_buttons->buttonState(b);
+	QVector<bool> buttonStates;
 
 	switch (b) {
 	case 0:
-		qWarning() << __PRETTY_FUNCTION__ << ": m_currProgram =" << m_currProgram;
-		qWarning() << __PRETTY_FUNCTION__ << ": m_nextProgram =" << m_nextProgram;
-		if (m_currProgram == b) {
-			m_currProgram = -1;
-			m_hue->turnLightsOff();
-			m_buttons->setButtonState(0, false);
-		}
-		else {
-			emit turnLedsOff();
-			runDailyProgram();
-		}
+		m_hue->switchDailyProgramState();
+		m_buttons->setButtonState(0, !m_buttons->buttonState(0));
 		break;
 	case 1:
 	case 2:
 	case 3:
 	case 4:
-		qWarning() << __PRETTY_FUNCTION__ << ": m_currProgram =" << m_currProgram;
-		qWarning() << __PRETTY_FUNCTION__ << ": m_nextProgram =" << m_nextProgram;
 		if (m_currProgram == b) {
 			m_currProgram = 0;
 			emit turnLedsOff();
@@ -132,49 +145,25 @@ void Program::buttonPressed(int b)
 		}
 		break;
 	case 5:
-		qWarning() << __PRETTY_FUNCTION__ << ": m_currProgram =" << m_currProgram;
-		qWarning() << __PRETTY_FUNCTION__ << ": m_nextProgram =" << m_nextProgram;
-		if (m_currProgram == b) {
-			runDailyProgram();
-			emit turnLedsOff();
-		}
-		else {
-			emit runLedProgram(b);
-			m_hue->setLightsColor(QColor(Qt::green));
-			m_buttons->setButtonState(m_currProgram, false);
-			m_buttons->setButtonState(b, true);
-			m_currProgram = b;
-		}
+		m_buttons->turnLedsOff();
+		m_buttons->setButtonState(b, true);
+		emit hueProgramStarted();
+		emit runLedProgram(b);
+		m_hue->setLightsColor(QColor(Qt::green));
 		break;
 	case 8:
-		qWarning() << __PRETTY_FUNCTION__ << ": m_currProgram =" << m_currProgram;
-		qWarning() << __PRETTY_FUNCTION__ << ": m_nextProgram =" << m_nextProgram;
-		if (m_currProgram == b) {
-			runDailyProgram();
-			emit turnLedsOff();
-		}
-		else {
-			emit runLedProgram(b);
-			m_hue->setLightsColor(QColor(Qt::yellow));
-			m_buttons->setButtonState(m_currProgram, false);
-			m_buttons->setButtonState(b, true);
-			m_currProgram = b;
-		}
+		m_buttons->turnLedsOff();
+		m_buttons->setButtonState(b, true);
+		emit hueProgramStarted();
+		emit runLedProgram(b);
+		m_hue->setLightsColor(QColor(Qt::yellow));
 		break;
 	case 9:
-		qWarning() << __PRETTY_FUNCTION__ << ": m_currProgram =" << m_currProgram;
-		qWarning() << __PRETTY_FUNCTION__ << ": m_nextProgram =" << m_nextProgram;
-		if (m_currProgram == b) {
-			runDailyProgram();
-			emit turnLedsOff();
-		}
-		else {
-			emit runLedProgram(b);
-			m_hue->setLightsColor(QColor(Qt::red));
-			m_buttons->setButtonState(m_currProgram, false);
-			m_buttons->setButtonState(b, true);
-			m_currProgram = b;
-		}
+		m_buttons->turnLedsOff();
+		m_buttons->setButtonState(b, true);
+		emit hueProgramStarted();
+		emit runLedProgram(b);
+		m_hue->setLightsColor(QColor(Qt::red));
 		break;
 	default:
 		qWarning() << __PRETTY_FUNCTION__ << ": Invalid button value b =" << b;

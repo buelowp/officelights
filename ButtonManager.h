@@ -34,6 +34,7 @@ public:
 	void turnLedOff(int);
 	void turnLedOn(int);
 	bool buttonState(int);
+	QVector<bool> & allButtonStates() { return m_buttonState; }
 	void setButtonState(int, bool);
 
 public slots:
