@@ -215,23 +215,19 @@ void HueManager::runDailyProgram()
 	QDateTime dt = QDateTime::currentDateTime();
 
 	if (dt.date().dayOfWeek() < 6) {
-		qWarning() << __PRETTY_FUNCTION__ << ": " << dt.time().hour();
 		if (dt.time().hour() < 7) {
-			qWarning() << __PRETTY_FUNCTION__ << ": Before I get in";
 			emit dailyProgramComplete();
 			turnLightsOff();
 			m_progTimer->stop();
 			setTimeout();
 		}
 		else if (dt.time().hour() >= 16) {
-			qWarning() << __PRETTY_FUNCTION__ << ": I should have left";
 			emit dailyProgramComplete();
 			turnLightsOff();
 			m_progTimer->stop();
 			setTimeout();
 		}
 		else {
-			qWarning() << __PRETTY_FUNCTION__ << ": The lights are on";
 			turnLightsOn();
 			setLightsCTColor(300);
 			setBrightness(254);
