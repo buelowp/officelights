@@ -43,6 +43,8 @@ public slots:
 	void setLightCTColor(int, quint16);
 
 	void setLightsColor(QColor);
+	void setLightColor(QColor c);
+
 
 signals:
 	void hueBridgeFound();

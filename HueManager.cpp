@@ -105,7 +105,8 @@ void HueManager::turnLightsOff()
 		Light *light = m_Lights->get(i);
 		light->setOn(false);
 	}
-	m_progTimer->stop();
+	if (m_progTimer->isActive())
+		m_progTimer->stop();
 	setTimeout();
 }
 
@@ -153,6 +154,14 @@ void HueManager::setLightsColor(QColor c)
 	}
 }
 
+void HueManager::setLightColor(QColor c)
+{
+	if (l < m_Lights->rowCount()) {
+		Light *light = m_Lights->get(l);
+		light->setColor(c);
+	}
+}
+
 void HueManager::setLightsCTColor(quint16 ct)
 {
 	if (ct <= 500 || ct >= 153) {
@@ -194,19 +203,23 @@ void HueManager::runDailyProgram()
 	QDateTime dt = QDateTime::currentDateTime();
 
 	if (dt.date().dayOfWeek() < 6) {
+		qWarning() << __PRETTY_FUNCTION__ << ": " << dt.time().hour();
 		if (dt.time().hour() < 7) {
+			qWarning() << __PRETTY_FUNCTION__ << ": Before I get in";
 			emit dailyProgramComplete();
 			turnLightsOff();
 			m_progTimer->stop();
 			setTimeout();
 		}
-		else if (dt.time().hour() > 16) {
+		else if (dt.time().hour() >= 16) {
+			qWarning() << __PRETTY_FUNCTION__ << ": I should have left";
 			emit dailyProgramComplete();
 			turnLightsOff();
 			m_progTimer->stop();
 			setTimeout();
 		}
 		else {
+			qWarning() << __PRETTY_FUNCTION__ << ": The lights are on";
 			turnLightsOn();
 			setLightsCTColor(300);
 			setBrightness(254);
