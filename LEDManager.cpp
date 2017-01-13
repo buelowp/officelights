@@ -24,6 +24,7 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
 	m_enabled = true;
 	m_allowRun = false;
 	m_currentProgram = -1;
+	m_programChange = false;
 
     try {
         // addLeds may throw an exception if the SPI interface cannot be found.
@@ -53,9 +54,10 @@ void LEDManager::run()
 	qWarning() << __PRETTY_FUNCTION__ << ": Starting LED control thread";
 	turnLedsOff();
 	while (1) {
-		if (m_currentProgram > 0) {
+		if (m_programChange) {
 			runProgram(m_currentProgram);
 			emit programStarted(m_currentProgram);
+			m_programChange = false;
 		}
 		QThread::msleep(100);
 	}
@@ -72,8 +74,17 @@ void LEDManager::turnLedsOff()
 
 void LEDManager::setProgram(int p)
 {
-	m_currentProgram = p;
-	m_allowRun = true;
+	if (m_currentProgram == p) {
+		endProgram();
+	}
+	else {
+		// Allow any old program to finish first
+		m_allowRun = false;
+		QThread::msleep(250);
+		m_programChange = true;
+		m_currentProgram = p;
+		m_allowRun = true;
+	}
 }
 
 void LEDManager::endProgram()
@@ -81,10 +92,11 @@ void LEDManager::endProgram()
 	qWarning() << __PRETTY_FUNCTION__;
 	if (m_currentProgram >= 0) {
 		qWarning() << __PRETTY_FUNCTION__ << ": cleaning up program" << m_currentProgram;
+		m_allowRun = false;
 		turnLedsOff();
 		emit programDone(m_currentProgram);
-		m_allowRun = false;
 		m_currentProgram = -1;
+		emit endLedProgram();
 	}
 }
 
@@ -129,6 +141,7 @@ void LEDManager::setBrightness(int b)
 void LEDManager::red()
 {
 	while (m_allowRun) {
+		emit startLedProgram();
 		for (int i = 0; i < NUM_LEDS; i++) {
 			m_leds[i] = CRGB::Red;
 		}
@@ -142,6 +155,7 @@ void LEDManager::red()
 void LEDManager::yellow()
 {
 	while (m_allowRun) {
+		emit startLedProgram();
 		for (int i = 0; i < NUM_LEDS; i++) {
 			m_leds[i] = CRGB::Yellow;
 		}
@@ -155,6 +169,7 @@ void LEDManager::yellow()
 void LEDManager::green()
 {
 	while (m_allowRun) {
+		emit startLedProgram();
 		for (int i = 0; i < NUM_LEDS; i++) {
 			m_leds[i] = CRGB::Green;
 		}
@@ -209,6 +224,7 @@ void LEDManager::pulse()
 	FastLED.show();
 
 	while (m_allowRun) {
+		emit startLedProgram();
 		brightness += direction;
 		if (brightness == 255)
 			direction = -1;
@@ -226,6 +242,7 @@ void LEDManager::cylon()
 {
 	static uint8_t hue = 0;
 	while (m_allowRun) {
+		emit startLedProgram();
 		// First slide the led in one direction
 		for(int i = 0; i < NUM_LEDS; i++) {
 			// Set the i'th led to red
@@ -328,6 +345,7 @@ void LEDManager::rainbow()
 void LEDManager::demo()
 {
 	while (m_allowRun) {
+		emit startLedProgram();
 		// Call the current pattern function once, updating the 'leds' array
 		m_patterns[m_CurrentPatternNumber]();
 

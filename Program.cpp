@@ -21,8 +21,7 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 
 Program::Program(QObject *parent) : QObject(parent)
 {
-	m_nextProgram = -1;
-	m_currProgram = -1;
+	m_ledState = false;
 
 	m_buttons = new ButtonManager();
 	m_leds = new LEDManager();
@@ -47,7 +46,8 @@ Program::Program(QObject *parent) : QObject(parent)
 	hue_other->addTransition(m_hue, SIGNAL(dailyProgramStarted()), hue_dp);
 
 
-	leds_off->addTransition(this, SIGNAL(startLedProgram()), leds_on);
+	leds_off->addTransition(m_leds, SIGNAL(startLedProgram()), leds_on);
+	leds_on->addTransition(m_leds, SIGNAL(endLedProgram()), leds_off);
 	leds_on->addTransition(this, SIGNAL(endLedProgram()), leds_off);
 
 	connect(hue_dp, SIGNAL(entered()), this, SLOT(runDailyProgram()));
@@ -56,6 +56,9 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(hue_off, SIGNAL(exited()), this, SLOT(hueIsNotOff()));
 	connect(hue_other, SIGNAL(entered()), this, SLOT(hueOtherOn()));
 	connect(hue_other, SIGNAL(exited()), this, SLOT(hueOtherOff()));
+
+	connect(leds_on, SIGNAL(entered()), this, SLOT(ledsOn()));
+	connect(leds_off, SIGNAL(entered()), this, SLOT(ledsOff()));
 
 	m_huesm->addState(hue_off);
 	m_huesm->addState(hue_dp);
@@ -168,23 +171,19 @@ void Program::buttonPressed(int b)
 	case 2:
 	case 3:
 	case 4:
-		emit startLedProgram();
 		emit runLedProgram(b);
 		break;
 	case 5:
-		emit startLedProgram();
 		emit runLedProgram(b);
 		emit hueProgramStarted();
 		m_hue->setLightsColor(QColor(Qt::green));
 		break;
 	case 8:
-		emit startLedProgram();
 		emit runLedProgram(b);
 		emit hueProgramStarted();
 		m_hue->setLightsColor(QColor(Qt::yellow));
 		break;
 	case 9:
-		emit startLedProgram();
 		emit runLedProgram(b);
 		emit hueProgramStarted();
 		m_hue->setLightsColor(QColor(Qt::red));

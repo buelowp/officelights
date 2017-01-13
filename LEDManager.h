@@ -51,6 +51,8 @@ public slots:
 signals:
 	void programDone(int);
 	void programStarted(int);
+	void startLedProgram();
+	void endLedProgram();
 
 protected:
     void run() Q_DECL_OVERRIDE;
@@ -78,6 +80,7 @@ private:
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;
 	bool m_allowRun;
+	bool m_programChange;
 	int m_currentProgram;
 
 	uint8_t m_CurrentPatternNumber = 0; // Index number of which pattern is current

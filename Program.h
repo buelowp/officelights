@@ -47,6 +47,8 @@ public slots:
 	void hueIsNotOff();
 	void hueOtherOn();
 	void hueOtherOff();
+	void ledsOn() { m_ledState = true; }
+	void ledsOff() { m_ledState = false; }
 
 signals:
 	void setLedBrightness(int);
@@ -56,7 +58,6 @@ signals:
 	void startDailyProgram();
 	void hueProgramStarted();
 	void hueProgramEnded();
-	void startLedProgram();
 	void endLedProgram();
 
 private:
@@ -66,8 +67,7 @@ private:
 	QStateMachine *m_huesm;
 	QStateMachine *m_ledsm;
 
-	int m_nextProgram;
-	int m_currProgram;
+	bool m_ledState;
 };
 
 #endif /* PROGRAM_H_ */
