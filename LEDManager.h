@@ -50,6 +50,7 @@ public slots:
 
 signals:
 	void programDone(int);
+	void programStarted(int);
 
 protected:
     void run() Q_DECL_OVERRIDE;
@@ -69,7 +70,6 @@ private:
 	void sinelon();
 	void confetti();
 	void turnLedsOff();
-	void cleanUpProgram();
 	void pulse();
 	void red();
 	void yellow();

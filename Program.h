@@ -43,6 +43,10 @@ public slots:
 	void runDailyProgram();
 	void endDailyProgram();
 	void runHueAltProgram();
+	void hueIsOff();
+	void hueIsNotOff();
+	void hueOtherOn();
+	void hueOtherOff();
 
 signals:
 	void setLedBrightness(int);
@@ -52,6 +56,8 @@ signals:
 	void startDailyProgram();
 	void hueProgramStarted();
 	void hueProgramEnded();
+	void startLedProgram();
+	void endLedProgram();
 
 private:
 	ButtonManager *m_buttons;

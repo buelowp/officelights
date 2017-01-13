@@ -66,6 +66,7 @@ signals:
 	void hueBridgeFound();
 	void hueLightsFound(int);
 	void dailyProgramComplete();
+	void dailyProgramStarted();
 
 private:
 	void setTimeout();

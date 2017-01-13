@@ -198,6 +198,7 @@ void HueManager::setLightCTColor(int l, quint16 ct)
 /** Does not turn off the lights, used to stop the timer **/
 void HueManager::endDailyProgram()
 {
+	qWarning() << __PRETTY_FUNCTION__ << ": isActive is" << m_progTimer->isActive();
 	if (m_progTimer->isActive())
 		m_progTimer->stop();
 }
@@ -221,10 +222,12 @@ void HueManager::runDailyProgram()
 		}
 		else {
 			if (!m_progTimer->isActive()) {
+				qWarning() << __PRETTY_FUNCTION__ << ": Starting daily program";
 				m_progTimer->start(1000 * 60);		// Run change once a minute
 				turnLightsOn();
 				setLightsCTColor(300);
 				setBrightness(254);
+				emit dailyProgramStarted();
 			}
 		}
 	}
@@ -232,6 +235,7 @@ void HueManager::runDailyProgram()
 
 void HueManager::switchDailyProgramState()
 {
+	qWarning() << __PRETTY_FUNCTION__ << ": isActive is" << m_progTimer->isActive();
 	if (m_progTimer->isActive()) {
 		turnLightsOff();
 		emit dailyProgramComplete();

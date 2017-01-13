@@ -55,8 +55,9 @@ void LEDManager::run()
 	while (1) {
 		if (m_currentProgram > 0) {
 			runProgram(m_currentProgram);
+			emit programStarted(m_currentProgram);
 		}
-		QThread::sleep(1);
+		QThread::msleep(100);
 	}
 	qWarning() << __PRETTY_FUNCTION__ << ": exiting thread";
 }
@@ -77,7 +78,14 @@ void LEDManager::setProgram(int p)
 
 void LEDManager::endProgram()
 {
-	m_allowRun = false;
+	qWarning() << __PRETTY_FUNCTION__;
+	if (m_currentProgram >= 0) {
+		qWarning() << __PRETTY_FUNCTION__ << ": cleaning up program" << m_currentProgram;
+		turnLedsOff();
+		emit programDone(m_currentProgram);
+		m_allowRun = false;
+		m_currentProgram = -1;
+	}
 }
 
 void LEDManager::runProgram(int p)
@@ -86,41 +94,28 @@ void LEDManager::runProgram(int p)
 
 	switch (p) {
 	case 1:
-		m_allowRun = true;
-		m_currentProgram = p;
 		cylon();
 		break;
 	case 2:
-		m_allowRun = true;
-		m_currentProgram = p;
 		snow();
 		break;
 	case 3:
-		m_allowRun = true;
-		m_currentProgram = p;
 		demo();
 		break;
 	case 4:
-		m_allowRun = true;
-		m_currentProgram = p;
 		pulse();
 		break;
 	case 5:
-		m_allowRun = true;
-		m_currentProgram = p;
 		green();
 		break;
 	case 8:
-		m_allowRun = true;
-		m_currentProgram = p;
 		yellow();
 		break;
 	case 9:
-		m_allowRun = true;
-		m_currentProgram = p;
 		red();
 		break;
 	default:
+		qWarning() << __PRETTY_FUNCTION__ << ": unknown program" << p;
 		break;
 	}
 }
@@ -141,7 +136,7 @@ void LEDManager::red()
 		FastLED.show();
 		QThread::msleep(100);
 	}
-	cleanUpProgram();
+	endProgram();
 }
 
 void LEDManager::yellow()
@@ -154,7 +149,7 @@ void LEDManager::yellow()
 		FastLED.show();
 		QThread::msleep(100);
 	}
-	cleanUpProgram();
+	endProgram();
 }
 
 void LEDManager::green()
@@ -167,7 +162,7 @@ void LEDManager::green()
 		FastLED.show();
 		QThread::msleep(100);
 	}
-	cleanUpProgram();
+	endProgram();
 }
 
 void LEDManager::setRGB(int r, int g, int b)
@@ -186,23 +181,13 @@ void LEDManager::setRGB(int r, int g, int b)
 
 /**
  * \func void LEDManager::turnOff()
- * Turn off the LED strip. May not happe instantly, as it should allow the
+ * Turn off the LED strip. May not happen instantly, as it should allow the
  * current animation to complete.
  */
 void LEDManager::turnOff()
 {
 	if (m_allowRun)
 		m_allowRun = false;
-}
-
-void LEDManager::cleanUpProgram()
-{
-	qWarning() << __PRETTY_FUNCTION__ << ": cleaning up program" << m_currentProgram;
-        turnLedsOff();
-        FastLED.show();
-        m_allowRun = false;
-        emit programDone(m_currentProgram);
-        m_currentProgram = -1;
 }
 
 void LEDManager::fadeall()
@@ -234,7 +219,7 @@ void LEDManager::pulse()
 		FastLED.show();
 		QThread::msleep(10);
 	}
-	cleanUpProgram();
+	endProgram();
 }
 
 void LEDManager::cylon()
@@ -267,12 +252,12 @@ void LEDManager::cylon()
 			QThread::msleep(10);
 		}
 	}
-	cleanUpProgram();
+	endProgram();
 }
 
 void LEDManager::snow()
 {
-	cleanUpProgram();
+	endProgram();
 }
 
 // random colored speckles that blink in and fade smoothly
@@ -354,5 +339,5 @@ void LEDManager::demo()
 		EVERY_N_MILLISECONDS( 20 ) { m_hue++; } // slowly cycle the "base color" through the rainbow
 		EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
 	}
-	cleanUpProgram();
+	endProgram();
 }
