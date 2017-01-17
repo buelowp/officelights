@@ -120,7 +120,7 @@ void HueManager::turnLightsOff()
 	}
 	if (m_progTimer->isActive())
 		m_progTimer->stop();
-	setTimeout();
+	setIdleTimeout();
 }
 
 void HueManager::turnLightOn(int l)
@@ -203,31 +203,43 @@ void HueManager::endDailyProgram()
 		m_progTimer->stop();
 }
 
+int HueManager::setDailyProgramTimeout()
+{
+	QTime t = QTime::currentTime();
+	QTime et(16, 0, 0);
+
+	return t.secsTo(et);
+}
+
 void HueManager::runDailyProgram()
 {
 	QDateTime dt = QDateTime::currentDateTime();
 
+	qWarning() << __PRETTY_FUNCTION__ << ": checking to see if we turn on or off";
 	if (dt.date().dayOfWeek() < 6) {
 		if (dt.time().hour() < 7) {
 			emit dailyProgramComplete();
 			turnLightsOff();
 			m_progTimer->stop();
-			setTimeout();
+			setIdleTimeout();
 		}
 		else if (dt.time().hour() >= 16) {
 			emit dailyProgramComplete();
 			turnLightsOff();
 			m_progTimer->stop();
-			setTimeout();
+			setIdleTimeout();
 		}
 		else {
 			if (!m_progTimer->isActive()) {
-				qWarning() << __PRETTY_FUNCTION__ << ": Starting daily program";
-				m_progTimer->start(1000 * 60);		// Run change once a minute
-				turnLightsOn();
-				setLightsCTColor(300);
-				setBrightness(254);
-				emit dailyProgramStarted();
+				int seconds = setDailyProgramTimeout();
+				if (seconds > 0) {
+					qWarning() << __PRETTY_FUNCTION__ << ": Starting daily program to expire in" << seconds << "seconds";
+					m_progTimer->start(seconds * 1000 + 10);		//Timeout at 4pm + 10 seconds to avoid falling into a < 1 second boundary
+					turnLightsOn();
+					setLightsCTColor(300);
+					setBrightness(254);
+					emit dailyProgramStarted();
+				}
 			}
 		}
 	}
@@ -241,10 +253,10 @@ void HueManager::switchDailyProgramState()
 		emit dailyProgramComplete();
 	}
 	else
-		setTimeout();
+		setIdleTimeout();
 }
 
-void HueManager::setTimeout()
+void HueManager::setIdleTimeout()
 {
         QTime t = QTime::currentTime();
 

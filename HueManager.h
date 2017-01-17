@@ -69,7 +69,8 @@ signals:
 	void dailyProgramStarted();
 
 private:
-	void setTimeout();
+	void setIdleTimeout();
+	int setDailyProgramTimeout();
 
 	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;
 
