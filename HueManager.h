@@ -67,6 +67,7 @@ signals:
 	void hueLightsFound(int);
 	void dailyProgramComplete();
 	void dailyProgramStarted();
+	void wakeUpTime(int);
 
 private:
 	void setIdleTimeout();

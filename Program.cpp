@@ -74,6 +74,7 @@ Program::Program(QObject *parent) : QObject(parent)
 
 	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
 	connect(m_hue, SIGNAL(hueLightsFound(int)), this, SLOT(hueLightsFound(int)));
+	connect(m_hue, SIGNAL(wakeUpTime(int)), this, SLOT(hueWakeUpTime(int)));
 	connect(m_buttons, SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
 	connect(m_buttons, SIGNAL(ready()), this, SLOT(buttonsFound()));
 	connect(this, SIGNAL(turnLedsOff()), m_leds, SLOT(turnOff()));
@@ -82,6 +83,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(m_leds, SIGNAL(finished()), m_leds, SLOT(deleteLater()));
 	connect(m_leds, SIGNAL(programDone(int)), this, SLOT(ledProgramDone(int)));
 	connect(this, SIGNAL(endLedProgram()), m_leds, SLOT(endProgram()));
+	connect(m_hue, SIGNAL(dailyProgramComplete()), this, SLOT(dailyProgramComplete()));
 }
 
 Program::~Program()
@@ -124,7 +126,7 @@ void Program::hueLightsFound(int c)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": found" << c << "lights";
 	if (c > 0) {
-		m_hue->runDailyProgram();
+		emit startDailyProgram();
 	}
 }
 
@@ -138,12 +140,14 @@ void Program::runDailyProgram()
 {
 	qWarning() << __PRETTY_FUNCTION__;
 	m_buttons->setButtonState(0, true);
+	m_hue->switchDailyProgramState();
 }
 
 void Program::endDailyProgram()
 {
 	qWarning() << __PRETTY_FUNCTION__;
 	m_buttons->setButtonState(0, false);
+	emit hueProgramEnded();
 }
 
 void Program::ledProgramDone(int p)
@@ -157,6 +161,23 @@ void Program::runHueAltProgram()
 {
 	qWarning() << __PRETTY_FUNCTION__;
 	m_hue->endDailyProgram();
+}
+
+void Program::hueWakeUpTime(int millis)
+{
+	qWarning() << __PRETTY_FUNCTION__ << ":" << millis;
+
+	QTimer::singleShot(millis, this, SLOT(timeoutWakeup()));
+}
+
+void Program::timeoutWakeup()
+{
+	emit startDailyProgram();
+}
+
+void Program::dailyProgramComplete()
+{
+	qWarning() << __PRETTY_FUNCTION__;
 }
 
 void Program::buttonPressed(int b)

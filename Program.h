@@ -49,6 +49,9 @@ public slots:
 	void hueOtherOff();
 	void ledsOn() { m_ledState = true; }
 	void ledsOff() { m_ledState = false; }
+	void hueWakeUpTime(int);
+	void timeoutWakeup();
+	void dailyProgramComplete();
 
 signals:
 	void setLedBrightness(int);

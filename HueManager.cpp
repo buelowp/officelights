@@ -215,7 +215,6 @@ void HueManager::runDailyProgram()
 {
 	QDateTime dt = QDateTime::currentDateTime();
 
-	qWarning() << __PRETTY_FUNCTION__ << ": checking to see if we turn on or off";
 	if (dt.date().dayOfWeek() < 6) {
 		if (dt.time().hour() < 7) {
 			emit dailyProgramComplete();
@@ -258,19 +257,14 @@ void HueManager::switchDailyProgramState()
 
 void HueManager::setIdleTimeout()
 {
-        QTime t = QTime::currentTime();
+	QTime t = QTime::currentTime();
+	int millisToWakeup = 0;
 
-        if (t.hour() < 6 || t.hour() >= 16) {
-                if (t.hour() < 6) {
-                        int millisToWakeup = ((((6 - t.hour()) * 60) + (60 - t.minute())) * 60000);
-                        QTimer::singleShot(millisToWakeup, this, SLOT(runDailyProgram()));
-                }
-                else {
-                        int millisToWakeup = (((24 - t.hour()) * 60) + (60 - t.minute()) * 60000);
-                        QTimer::singleShot(millisToWakeup, this, SLOT(runDailyProgram()));
-                }
-        }
-        else
-        	runDailyProgram();
+	if (t.hour() < 6)
+		millisToWakeup = ((((6 - t.hour()) * 60) + (60 - t.minute())) * 60000);
+	else
+		millisToWakeup = (((24 - t.hour()) * 60) + (60 - t.minute()) * 60000);
+
+	emit wakeUpTime(millisToWakeup);
 }
 

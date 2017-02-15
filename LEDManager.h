@@ -25,7 +25,7 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #include <functional>
 #include <FastLED/FastLED.h>
 
-#define NUM_LEDS	25
+#define NUM_LEDS	75
 #define SPI_BUS    0
 #define SPI_CS	   0
 
