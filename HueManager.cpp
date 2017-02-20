@@ -231,6 +231,7 @@ void HueManager::runDailyProgram()
 		else {
 			if (!m_progTimer->isActive()) {
 				int seconds = setDailyProgramTimeout();
+				qDebug() << __PRETTY_FUNCTION__ << ": seconds" << seconds;
 				if (seconds > 0) {
 					qWarning() << __PRETTY_FUNCTION__ << ": Starting daily program to expire in" << seconds << "seconds";
 					m_progTimer->start(seconds * 1000 + 10);		//Timeout at 4pm + 10 seconds to avoid falling into a < 1 second boundary
@@ -252,7 +253,7 @@ void HueManager::switchDailyProgramState()
 		emit dailyProgramComplete();
 	}
 	else
-		setIdleTimeout();
+		runDailyProgram();
 }
 
 void HueManager::setIdleTimeout()
