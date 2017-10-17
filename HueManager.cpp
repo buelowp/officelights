@@ -52,6 +52,23 @@ HueManager::~HueManager()
 {
 }
 
+/**
+ * \func bool HueManager::getLightState()
+ * \return Returns true if any one of the lights are on, false if none are on
+ */
+bool HueManager::getLightState()
+{
+	bool state = false;
+
+	for (int i = 0; i < m_Lights->rowCount(); i++) {
+		Light *light = m_Lights->get(i);
+		if (light->on()) {
+			state = true;
+		}
+	}
+	return state;
+}
+
 void HueManager::bridgeFound()
 {
 	qWarning() << __FUNCTION__ << ": Found a bridge, searching for lights";
@@ -118,9 +135,6 @@ void HueManager::turnLightsOff()
 		Light *light = m_Lights->get(i);
 		light->setOn(false);
 	}
-	if (m_progTimer->isActive())
-		m_progTimer->stop();
-	setIdleTimeout();
 }
 
 void HueManager::turnLightOn(int l)
@@ -193,79 +207,5 @@ void HueManager::setLightCTColor(int l, quint16 ct)
 			light->setCt(ct);
 		}
 	}
-}
-
-/** Does not turn off the lights, used to stop the timer **/
-void HueManager::endDailyProgram()
-{
-	qWarning() << __PRETTY_FUNCTION__ << ": isActive is" << m_progTimer->isActive();
-	if (m_progTimer->isActive())
-		m_progTimer->stop();
-}
-
-int HueManager::setDailyProgramTimeout()
-{
-	QTime t = QTime::currentTime();
-	QTime et(16, 0, 0);
-
-	return t.secsTo(et);
-}
-
-void HueManager::runDailyProgram()
-{
-	QDateTime dt = QDateTime::currentDateTime();
-
-	if (dt.date().dayOfWeek() < 6) {
-		if (dt.time().hour() < 7) {
-			emit dailyProgramComplete();
-			turnLightsOff();
-			m_progTimer->stop();
-			setIdleTimeout();
-		}
-		else if (dt.time().hour() >= 16) {
-			emit dailyProgramComplete();
-			turnLightsOff();
-			m_progTimer->stop();
-			setIdleTimeout();
-		}
-		else {
-			if (!m_progTimer->isActive()) {
-				int seconds = setDailyProgramTimeout();
-				qDebug() << __PRETTY_FUNCTION__ << ": seconds" << seconds;
-				if (seconds > 0) {
-					qWarning() << __PRETTY_FUNCTION__ << ": Starting daily program to expire in" << seconds << "seconds";
-					m_progTimer->start(seconds * 1000 + 10);		//Timeout at 4pm + 10 seconds to avoid falling into a < 1 second boundary
-					turnLightsOn();
-					setLightsCTColor(300);
-					setBrightness(254);
-					emit dailyProgramStarted();
-				}
-			}
-		}
-	}
-}
-
-void HueManager::switchDailyProgramState()
-{
-	qWarning() << __PRETTY_FUNCTION__ << ": isActive is" << m_progTimer->isActive();
-	if (m_progTimer->isActive()) {
-		turnLightsOff();
-		emit dailyProgramComplete();
-	}
-	else
-		runDailyProgram();
-}
-
-void HueManager::setIdleTimeout()
-{
-	QTime t = QTime::currentTime();
-	int millisToWakeup = 0;
-
-	if (t.hour() < 6)
-		millisToWakeup = ((((6 - t.hour()) * 60) + (60 - t.minute())) * 60000);
-	else
-		millisToWakeup = (((24 - t.hour()) * 60) + (60 - t.minute()) * 60000);
-
-	emit wakeUpTime(millisToWakeup);
 }
 

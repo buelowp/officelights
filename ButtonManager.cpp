@@ -91,6 +91,7 @@ void ButtonManager::buttonUp(int button)
 
 void ButtonManager::start()
 {
+	qDebug() << __PRETTY_FUNCTION__ << ": Looking for buttons";
 	m_buttonManager->queryForDevice();
 }
 

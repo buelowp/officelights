@@ -5,6 +5,10 @@ QT += network core
 
 QMAKE_CXXFLAGS += -std=c++11
 
+DESTDIR = bin
+OBJECTS_DI = .obj
+MOC_DIR = .moc
+
 LIBS += -lhue -lxkey8 -lfastled
 
 SOURCES = \

@@ -32,11 +32,9 @@ public:
 	HueManager(QObject *parent = 0);
 	virtual ~HueManager();
 
-	bool isDailyActive() { return m_progTimer->isActive(); }
+	bool getLightState();
 
 public slots:
-//	void switchTimeout();
-	void runDailyProgram();
 	void bridgeFound();
 	void bridgeStatusChange(int);
 	void lightsBusyChanged();
@@ -65,14 +63,8 @@ public slots:
 signals:
 	void hueBridgeFound();
 	void hueLightsFound(int);
-	void dailyProgramComplete();
-	void dailyProgramStarted();
-	void wakeUpTime(int);
 
 private:
-	void setIdleTimeout();
-	int setDailyProgramTimeout();
-
 	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;
 
 	HueBridgeConnection *m_Bridge;

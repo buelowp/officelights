@@ -53,6 +53,10 @@ public slots:
 	void timeoutWakeup();
 	void dailyProgramComplete();
 
+	void turnHueLightsOn();
+	void turnHueLightsOff();
+	void toggleLights();
+
 signals:
 	void setLedBrightness(int);
 	void setRGB(int, int, int);
@@ -63,12 +67,22 @@ signals:
 	void hueProgramEnded();
 	void endLedProgram();
 
+	void turnLightsOn();
+	void turnLightsOff();
+	void dailyProgramStarted();
+	void dailyProgramComplete();
+	void runNextEvent();
+
 private:
+	void turnOnMorning();
+	void turnOffEvening();
+
 	ButtonManager *m_buttons;
 	LEDManager *m_leds;
 	HueManager *m_hue;
 	QStateMachine *m_huesm;
 	QStateMachine *m_ledsm;
+	QTimer *m_nextEvent;
 
 	bool m_ledState;
 };
