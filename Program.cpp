@@ -32,13 +32,21 @@ Program::Program(QObject *parent) : QObject(parent)
 
 	QState *lightsOff = new QState();
 	QState *lightsOn = new QState();
+    QState *lightsInit = new QState();
+    QState *lightsChanging = new QState();
 
-	lightsOff->addTransition(this, SIGNAL(turnLightsOn()), lightsOn);
-	lightsOff->addTransition(this, SIGNAL(dailyProgramStarted()), lightsOn);
-	lightsOn->addTransition(this, SIGNAL(turnLightsOff()), lightsOff);
-	lightsOn->addTransition(this, SIGNAL(dailyProgramComplete()), lightsOff);
+//	lightsOff->addTransition(this, SIGNAL(turnLightsOn()), lightsOn);
+//	lightsOn->addTransition(this, SIGNAL(turnLightsOff()), lightsOff);
+    lightsInit->addTransition(this, SIGNAL(initializationDone()), lightsOff);
+    lightsChanging->addTransition(this, SIGNAL(allLightsOn()), lightsOn);
+    lightsChanging->addTransition(this, SIGNAL(allLightsOff()), lightsOff);
+    lightsOff->addTransition(this, SIGNAL(pendingOnStateChange()), lightsChanging);
+    lightsOn->addTransition(this, SIGNAL(pendingOffStateChange()), lightsChanging);
+    
 	connect(lightsOn, SIGNAL(entered()), this, SLOT(turnHueLightsOn()));
+//    connect(lightsOn, SIGNAL(entered()), this, SLOT(runNextEvent()));
 	connect(lightsOff, SIGNAL(entered()), this, SLOT(turnHueLightsOff()));
+//    connect(lightsOff, SIGNAL(entered()), this, SLOT(runNextEvent()));
 	connect(this, SIGNAL(lightPowerButtonPressed()), this, SLOT(toggleLights()));
 
 	QState *leds_off = new QState();
@@ -51,7 +59,9 @@ Program::Program(QObject *parent) : QObject(parent)
 
 	m_huesm->addState(lightsOff);
 	m_huesm->addState(lightsOn);
-	m_huesm->setInitialState(lightsOff);
+    m_huesm->addState(lightsInit);
+    m_huesm->addState(lightsChanging);
+	m_huesm->setInitialState(lightsInit);
 	m_huesm->start();
 
 	m_ledsm->addState(leds_off);
@@ -63,7 +73,6 @@ Program::Program(QObject *parent) : QObject(parent)
 
 	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
 	connect(m_hue, SIGNAL(hueLightsFound(int)), this, SLOT(hueLightsFound(int)));
-	connect(m_hue, SIGNAL(wakeUpTime(int)), this, SLOT(hueWakeUpTime(int)));
 	connect(m_buttons, SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
 	connect(m_buttons, SIGNAL(ready()), this, SLOT(buttonsFound()));
 	connect(this, SIGNAL(turnLedsOff()), m_leds, SLOT(turnOff()));
@@ -86,21 +95,55 @@ void Program::init()
 	m_leds->start();
 }
 
+void Program::updateLightState(bool state)
+{
+    if (state) {
+        m_turnOnCount--;
+        if (m_turnOnCount == 0) {
+            emit allLightsOn();
+        }
+    }
+    else {
+        m_turnOffCount--;
+        if (m_turnOffCount == 0) {
+            emit allLightsOff();
+        }
+    }
+}
+
+void Program::updateTurnOffCount()
+{
+    m_turnOffCount++;
+}
+
+void Program::updateTurnOnCount()
+{
+    m_turnOnCount++;
+}
+
 void Program::turnHueLightsOn()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	m_hue->turnLightsOn();
+    emit pendingOnStateChange();
 }
 
 void Program::turnHueLightsOff()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	m_hue->turnLightsOff();
+    emit pendingOffStateChange();
 }
 
 void Program::runNextEvent()
 {
 	QDateTime dt = QDateTime::currentDateTime();
 
+    qDebug() << __PRETTY_FUNCTION__;
+    
 	if (dt.date().dayOfWeek() < 6) {
+        qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
+        
 		if ((dt.time().hour() >= 6) && (dt.time().hour() <= 17)) {
 			emit turnLightsOn();
 			QDateTime next;
@@ -123,6 +166,7 @@ void Program::runNextEvent()
 		}
 	}
 	else {
+        qDebug() << __PRETTY_FUNCTION__ << ": it's a weekend";
 		QDateTime next;
 		QDate monday = dt.date();
 		QTime turnOn(6,0,0);
@@ -162,8 +206,8 @@ void Program::hueBridgeFound()
 void Program::hueLightsFound(int c)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": found" << c << "lights";
-	if (c > 0) {
-		emit startDailyProgram();
+	if (c == 4) {
+		emit initializationDone();
 	}
 }
 
@@ -183,7 +227,6 @@ void Program::ledProgramDone(int p)
 void Program::runHueAltProgram()
 {
 	qWarning() << __PRETTY_FUNCTION__;
-	m_hue->endDailyProgram();
 }
 
 void Program::toggleLights()

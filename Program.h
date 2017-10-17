@@ -40,8 +40,6 @@ public slots:
 	void hueLightsFound(int);
 	void buttonsFound();
 	void ledProgramDone(int);
-	void runDailyProgram();
-	void endDailyProgram();
 	void runHueAltProgram();
 	void hueIsOff();
 	void hueIsNotOff();
@@ -49,13 +47,14 @@ public slots:
 	void hueOtherOff();
 	void ledsOn() { m_ledState = true; }
 	void ledsOff() { m_ledState = false; }
-	void hueWakeUpTime(int);
-	void timeoutWakeup();
-	void dailyProgramComplete();
 
 	void turnHueLightsOn();
 	void turnHueLightsOff();
 	void toggleLights();
+    void runNextEvent();
+    void updateTurnOnCount();
+    void updateTurnOffCount();
+    void updateLightState(bool);
 
 signals:
 	void setLedBrightness(int);
@@ -71,7 +70,12 @@ signals:
 	void turnLightsOff();
 	void dailyProgramStarted();
 	void dailyProgramComplete();
-	void runNextEvent();
+    void lightPowerButtonPressed();
+    void initializationDone();
+    void pendingOffStateChange();
+    void pendingOnStateChange();
+    void allLightsOn();
+    void allLightsOff();
 
 private:
 	void turnOnMorning();
@@ -85,6 +89,8 @@ private:
 	QTimer *m_nextEvent;
 
 	bool m_ledState;
+    int m_turnOffCount;
+    int m_turnOnCount;
 };
 
 #endif /* PROGRAM_H_ */

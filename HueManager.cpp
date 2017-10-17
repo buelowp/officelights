@@ -22,6 +22,8 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 HueManager::HueManager(QObject *parent) : QObject(parent)
 {
 	m_ct = 153;
+    m_stateChangeInProgress = 0;
+
 	m_BridgeStatus = HueBridgeConnection::BridgeStatus::BridgeStatusSearching;
 	m_Lights = new Lights();
 	m_progTimer = new QTimer(this);
@@ -37,8 +39,10 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 	else
 		m_Bridge = HueBridgeConnection::instance();
 
-	connect(m_progTimer, SIGNAL(timeout()), this, SLOT(runDailyProgram()));
 	connect(m_Lights, SIGNAL(busyChanged()), this, SLOT(lightsBusyChanged()));
+    connect(m_Lights, SIGNAL(updateLightsCount(int)), this, SLOT(updateLightsCount(int)));
+    connect(m_Lights, SIGNAL(stateChanged(int)), this, SLOT(lightStateChanged(int)));
+    
 	if (m_Bridge) {
 		connect(m_Bridge, SIGNAL(bridgeFoundChanged()), this, SLOT(bridgeFound()));
 		connect(m_Bridge, SIGNAL(connectedBridgeChanged()), this, SLOT(connectedBridgeChanged()));
@@ -50,6 +54,13 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 
 HueManager::~HueManager()
 {
+}
+
+void HueManager::lightStateChanged(int id)
+{
+    qDebug() << __PRETTY_FUNCTION__ << ": state changed for " << id;
+    Light *light = m_Lights->get(id);
+    emit newLightState(light->on);
 }
 
 /**
@@ -76,18 +87,23 @@ void HueManager::bridgeFound()
 	emit hueBridgeFound();
 }
 
+void HueManager::updateLightsCount(int c)
+{
+    qDebug() << __PRETTY_FUNCTION__ << ": lights count is now " << c;
+    m_stateChangeInProgress = c;
+    emit hueLightsFound(c);
+}
+
 void HueManager::lightsBusyChanged()
 {
-	qWarning() << "Found" << m_Lights->rowCount() << "lights";
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
-		qWarning() << "Found light" << light->name();
-		qWarning() << "with SW version" << light->swversion();
+		qWarning() << __PRETTY_FUNCTION__ << "Found light" << light->name() << "with SW version" << light->swversion();
 		if (light->on()) {
 			light->setOn(false);
 		}
 	}
-	emit hueLightsFound(m_Lights->rowCount());
+//	emit hueLightsFound(m_Lights->rowCount());
 }
 
 void HueManager::apiKeyChanged()
@@ -123,17 +139,21 @@ void HueManager::bridgeStatusChange(int num)
 
 void HueManager::turnLightsOn()
 {
+    qDebug() << __PRETTY_FUNCTION__ << ": Turning on " << m_Lights->rowCount() << " lights";
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
 		light->setOn(true);
+        emit updateTurnOnCount();
 	}
 }
 
 void HueManager::turnLightsOff()
 {
+    qDebug() << __PRETTY_FUNCTION__ << ": Turning off " << m_Lights->rowCount() << " lights";
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
 		light->setOn(false);
+        emit updateTurnOffCount();
 	}
 }
 

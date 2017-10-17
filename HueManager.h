@@ -55,14 +55,15 @@ public slots:
 
 	void setLightsColor(QColor);
 	void setLightColor(int, QColor);
-
-	void switchDailyProgramState();
-	void endDailyProgram();
-
+    void lightStateChanged(int);
+    void updateLightsCount(int);
 
 signals:
 	void hueBridgeFound();
 	void hueLightsFound(int);
+    void updateTurnOnCount();
+    void updateTurnOffCount();
+    void newLightState(bool);
 
 private:
 	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;
@@ -74,7 +75,9 @@ private:
 	QString m_apiKey;
 	QString m_ipAddr;
 	QTimer *m_progTimer;
+    QMap<int, bool> m_lightState;
 	int m_ct;
+    int m_stateChangeInProgress;
 };
 
 #endif /* HUEMANAGER_H_ */
