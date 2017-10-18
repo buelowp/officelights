@@ -42,6 +42,7 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 	connect(m_Lights, SIGNAL(busyChanged()), this, SLOT(lightsBusyChanged()));
     connect(m_Lights, SIGNAL(updateLightsCount(int)), this, SLOT(updateLightsCount(int)));
     connect(m_Lights, SIGNAL(stateChanged(int)), this, SLOT(lightStateChanged(int)));
+    connect(m_Lights, SIGNAL(lightStateUpdated(int)), this, SLOT(lightStateChanged(int)));
     
 	if (m_Bridge) {
 		connect(m_Bridge, SIGNAL(bridgeFoundChanged()), this, SLOT(bridgeFound()));
@@ -58,9 +59,19 @@ HueManager::~HueManager()
 
 void HueManager::lightStateChanged(int id)
 {
+    bool isOn = false;
     qDebug() << __PRETTY_FUNCTION__ << ": state changed for " << id;
-    Light *light = m_Lights->get(id);
-    emit newLightState(light->on);
+    qDebug() << __PRETTY_FUNCTION__ << ": lights array has size " << m_Lights->rowCount();
+    if (id > 0) {
+        Light *light = m_Lights->get(id - 1);
+        if (light) {
+            isOn = light->on();
+            emit newLightState(isOn);
+        }
+        else {
+            qDebug() << __PRETTY_FUNCTION__ << ": light is NULL, no signal sent";
+        }
+    }
 }
 
 /**
@@ -139,22 +150,38 @@ void HueManager::bridgeStatusChange(int num)
 
 void HueManager::turnLightsOn()
 {
+    bool lightTurnedOn = false;
+    
     qDebug() << __PRETTY_FUNCTION__ << ": Turning on " << m_Lights->rowCount() << " lights";
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
-		light->setOn(true);
-        emit updateTurnOnCount();
+        if (!light->on()) {
+            light->setOn(true);
+            lightTurnedOn = true;
+            emit updateTurnOnCount();
+        }
 	}
+	if (!lightTurnedOn) {
+        emit noLightsTurnedOn();
+    }
 }
 
 void HueManager::turnLightsOff()
 {
+    bool lightTurnedOff = false;
+    
     qDebug() << __PRETTY_FUNCTION__ << ": Turning off " << m_Lights->rowCount() << " lights";
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
-		light->setOn(false);
-        emit updateTurnOffCount();
+        if (light->on()) {
+            light->setOn(false);
+            lightTurnedOff = true;
+            emit updateTurnOffCount();
+        }
 	}
+	if (!lightTurnedOff) {
+        emit noLightsTurnedOff();
+    }
 }
 
 void HueManager::turnLightOn(int l)

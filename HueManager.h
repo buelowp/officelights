@@ -64,6 +64,8 @@ signals:
     void updateTurnOnCount();
     void updateTurnOffCount();
     void newLightState(bool);
+    void noLightsTurnedOff();
+    void noLightsTurnedOn();
 
 private:
 	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;
