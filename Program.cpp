@@ -38,9 +38,7 @@ Program::Program(QObject *parent) : QObject(parent)
 
     lightsInit->addTransition(this, SIGNAL(initializationDone()), lightsSwitchToOff);
     lightsSwitchToOn->addTransition(this, SIGNAL(allLightsOn()), lightsOn);
-    lightsSwitchToOn->addTransition(m_hue, SIGNAL(noLightsTurnedOn()), lightsOn);
     lightsSwitchToOff->addTransition(this, SIGNAL(allLightsOff()), lightsOff);
-    lightsSwitchToOff->addTransition(m_hue, SIGNAL(noLightsTurnedOff()), lightsOff);
     lightsOff->addTransition(this, SIGNAL(pendingOnStateChange()), lightsSwitchToOn);
     lightsOn->addTransition(this, SIGNAL(pendingOffStateChange()), lightsSwitchToOff);
     
@@ -101,23 +99,14 @@ void Program::init()
 
 void Program::updateLightState(int id, bool state)
 {
-    Q_UNUSED(id)
     qDebug() << __PRETTY_FUNCTION__ << ": Updating state for light" << id << "to" << state;
     
-    if (state) {
-        m_turnOnCount--;
-        if (m_turnOnCount == 0) {
-            emit allLightsOn();
-        }
-    }
-    else {
-        m_turnOffCount--;
-        if (m_turnOffCount == 0) {
-            emit allLightsOff();
-        }
+    m_lightsState[id] = state;
+    if (m_lightsState.size() == m_lightCount) {
+        
     }
 }
-
+/*
 void Program::updateTurnOffCount()
 {
     m_turnOffCount++;
@@ -129,17 +118,39 @@ void Program::updateTurnOnCount()
     m_turnOnCount++;
     qDebug() << __PRETTY_FUNCTION__ << ": m_turnOnCount " << m_turnOnCount;
 }
-
+*/
+/**
+ * \func void Program::turnHueLightsOn()
+ * \details Ask the Hue manager to turn all of
+ * the lights on. It will return the number of
+ * lights it asked to turn off. If that number is
+ * zero, no state change complete notification will 
+ * come, so we need to send it directly.
+ */
 void Program::turnHueLightsOn()
 {
+    int count = 0;
+    
     qDebug() << __PRETTY_FUNCTION__;
-	m_hue->turnLightsOn();
+    if ((count = m_hue->turnLightsOn()) == 0)
+        emit allLightsOn();
 }
 
+/**
+ * \func void Program::turnHueLightsOff()
+ * \details Ask the Hue manager to turn all of
+ * the lights off. It will return the number of
+ * lights it asked to turn off. If that number is
+ * zero, no state change complete notification will 
+ * come, so we need to send it directly.
+ */
 void Program::turnHueLightsOff()
 {
+    int count = 0;
+    
     qDebug() << __PRETTY_FUNCTION__;
-	m_hue->turnLightsOff();
+    if ((count = m_hue->turnLightsOff()) == 0)
+        emit allLightsOff();
 }
 
 void Program::runNextEvent()
@@ -159,7 +170,7 @@ void Program::runNextEvent()
 			next.setTime(turnOff);
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
-			qDebug() << __PRETTY_FUNCTION__ << ":" << __LINE__ << ": " << dt.msecsTo(next);
+			qDebug() << __PRETTY_FUNCTION__ << ":" << dt.msecsTo(next);
 		}
 		else {
 			emit pendingOffStateChange();
@@ -169,7 +180,7 @@ void Program::runNextEvent()
 			next.setTime(turnOn);
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
-			qDebug() << __PRETTY_FUNCTION__ << ":" << __LINE__ << ": " << dt.msecsTo(next);
+			qDebug() << __PRETTY_FUNCTION__ << ":" << dt.msecsTo(next);
 		}
 	}
 	else {
@@ -180,7 +191,7 @@ void Program::runNextEvent()
 		next.setTime(turnOn);
 		m_nextEvent->setInterval(dt.msecsTo(next));
         m_nextEvent->start();
-		qDebug() << __PRETTY_FUNCTION__ << ":" << __LINE__ << ": " << dt.msecsTo(next);
+        qDebug() << __PRETTY_FUNCTION__ << ":" << dt.msecsTo(next);
 	}
 }
 
@@ -212,7 +223,8 @@ void Program::hueBridgeFound()
 void Program::hueLightsFound(int c)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": found" << c << "lights";
-		emit initializationDone();
+    m_lightCount = 4;
+    emit initializationDone();
 }
 
 void Program::buttonsFound()

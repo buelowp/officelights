@@ -36,18 +36,18 @@ public:
     bool getLightState(int);
     void start();
 
+    int turnLightsOn();
+	int turnLightsOff();
+
+	bool turnLightOn(int);
+	bool turnLightOff(int);
+
 public slots:
 	void bridgeFound();
 	void bridgeStatusChange(int);
 	void lightsBusyChanged();
 	void connectedBridgeChanged(); 
 	void apiKeyChanged();
-
-	void turnLightsOn();
-	void turnLightsOff();
-
-	void turnLightOn(int);
-	void turnLightOff(int);
 
 	void setBrightness(int);
 	void setBrightness(int, int);

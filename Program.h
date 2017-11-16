@@ -87,7 +87,9 @@ private:
 	QStateMachine *m_huesm;
 	QStateMachine *m_ledsm;
 	QTimer *m_nextEvent;
+    QMap<int, bool> m_lightsState;
 
+    int m_lightCount;
 	bool m_ledState;
     int m_turnOffCount;
     int m_turnOnCount;

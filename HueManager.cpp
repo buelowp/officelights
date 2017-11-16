@@ -119,10 +119,10 @@ void HueManager::lightsBusyChanged()
 {
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
-		qWarning() << __PRETTY_FUNCTION__ << "Found light" << light->name() << "with SW version" << light->swversion();
-		if (light->on()) {
-			light->setOn(false);
-		}
+		qWarning() << __PRETTY_FUNCTION__ << "Found light" << light->name() << ", state" << light->on();
+//		if (light->on()) {
+//			light->setOn(false);
+//		}
 	}
 //	emit hueLightsFound(m_Lights->rowCount());
 }
@@ -130,6 +130,7 @@ void HueManager::lightsBusyChanged()
 void HueManager::apiKeyChanged()
 {
 	qWarning() << __FUNCTION__ << ": API key has been reset to" << m_Bridge->apiKey();
+    m_KeyStore.setApiKey(m_Bridge->apiKey());
 }
 
 void HueManager::connectedBridgeChanged()
@@ -158,56 +159,58 @@ void HueManager::bridgeStatusChange(int num)
 	}
 }
 
-void HueManager::turnLightsOn()
+int HueManager::turnLightsOn()
 {
-    bool lightTurnedOn = false;
+    int count = 0;
     
     qDebug() << __PRETTY_FUNCTION__ << ": Turning on " << m_Lights->rowCount() << " lights";
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
         if (!light->on()) {
             light->setOn(true);
-            lightTurnedOn = true;
-            emit updateTurnOnCount();
+            count++;
         }
 	}
-	if (!lightTurnedOn) {
-        emit noLightsTurnedOn();
-    }
+	return count;
 }
 
-void HueManager::turnLightsOff()
+int HueManager::turnLightsOff()
 {
-    bool lightTurnedOff = false;
+    int count = 0;
     
     qDebug() << __PRETTY_FUNCTION__ << ": Turning off " << m_Lights->rowCount() << " lights";
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
         if (light->on()) {
             light->setOn(false);
-            lightTurnedOff = true;
-            emit updateTurnOffCount();
+            count++;
         }
 	}
-	if (!lightTurnedOff) {
-        emit noLightsTurnedOff();
-    }
+	return count;
 }
 
-void HueManager::turnLightOn(int l)
+bool HueManager::turnLightOn(int l)
 {
 	if (l < m_Lights->rowCount()) {
 		Light *light = m_Lights->get(l);
-		light->setOn(true);
+        if (!light->on()) {
+            light->setOn(true);
+            return true;
+        }
 	}
+	return false;
 }
 
-void HueManager::turnLightOff(int l)
+bool HueManager::turnLightOff(int l)
 {
 	if (l < m_Lights->rowCount()) {
 		Light *light = m_Lights->get(l);
-		light->setOn(false);
+        if (light->on()) {
+            light->setOn(false);
+            return true;
+        }
 	}
+	return false;
 }
 
 void HueManager::setBrightness(int b)
