@@ -41,6 +41,9 @@ public:
 
 	bool turnLightOn(int);
 	bool turnLightOff(int);
+    
+    bool allLightsAreOn();
+    bool allLightsAreOff();
 
 public slots:
 	void bridgeFound();

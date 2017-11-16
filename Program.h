@@ -52,8 +52,8 @@ public slots:
 	void turnHueLightsOff();
 	void toggleLights();
     void runNextEvent();
-    void updateTurnOnCount();
-    void updateTurnOffCount();
+//    void updateTurnOnCount();
+//    void updateTurnOffCount();
     void updateLightState(int, bool);
 
 signals:

@@ -97,15 +97,28 @@ void Program::init()
     m_hue->start();
 }
 
+/**
+ * \func void Program::updateLightState(int id, bool state)
+ * \details Sets the state to a value. The state map is reset
+ * after each attempt at a state change. Then, we keep track of
+ * the state change, and let the system know when we are done.
+ * This has a gaping hole I don't know how to fix. That is, 
+ * what happens if all of the state changes don't happen
+ * as expected
+ */
 void Program::updateLightState(int id, bool state)
 {
     qDebug() << __PRETTY_FUNCTION__ << ": Updating state for light" << id << "to" << state;
     
     m_lightsState[id] = state;
     if (m_lightsState.size() == m_lightCount) {
-        
+        if (m_hue->allLightsAreOn())
+            emit allLightsOn();
+        if (m_hue->allLightsAreOff())
+            emit allLightsOff();
     }
 }
+
 /*
 void Program::updateTurnOffCount()
 {
@@ -130,6 +143,8 @@ void Program::updateTurnOnCount()
 void Program::turnHueLightsOn()
 {
     int count = 0;
+    
+    m_lightsState.clear();
     
     qDebug() << __PRETTY_FUNCTION__;
     if ((count = m_hue->turnLightsOn()) == 0)

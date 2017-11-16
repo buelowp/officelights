@@ -84,6 +84,28 @@ void HueManager::lightStateChanged(int id, bool state)
     }
 }
 
+bool HueManager::allLightsAreOn()
+{
+    for (int i = 0; i < m_Lights->rowCount(); i++) {
+        Light *light = m_Lights->get(i);
+        if (!light->on()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool HueManager::allLightsAreOff()
+{
+    for (int i = 0; i < m_Lights->rowCount(); i++) {
+        Light *light = m_Lights->get(i);
+        if (light->on()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /**
  * \func bool HueManager::getLightState()
  * \return Returns true if any one of the lights are on, false if none are on
