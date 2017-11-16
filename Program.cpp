@@ -38,7 +38,7 @@ Program::Program(QObject *parent) : QObject(parent)
 
     lightsInit->addTransition(this, SIGNAL(initializationDone()), lightsSwitchToOff);
     lightsSwitchToOn->addTransition(this, SIGNAL(allLightsOn()), lightsOn);
-    lightsSwitchToOn->addTransition(m_hue, SIGNAL(noLightsTurnOn()), lightsOn);
+    lightsSwitchToOn->addTransition(m_hue, SIGNAL(noLightsTurnedOn()), lightsOn);
     lightsSwitchToOff->addTransition(this, SIGNAL(allLightsOff()), lightsOff);
     lightsSwitchToOff->addTransition(m_hue, SIGNAL(noLightsTurnedOff()), lightsOff);
     lightsOff->addTransition(this, SIGNAL(pendingOnStateChange()), lightsSwitchToOn);
@@ -84,7 +84,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(m_leds, SIGNAL(programDone(int)), this, SLOT(ledProgramDone(int)));
 	connect(this, SIGNAL(endLedProgram()), m_leds, SLOT(endProgram()));
 	connect(m_nextEvent, SIGNAL(timeout()), this, SLOT(runNextEvent()));
-    connect(m_hue, SIGNAL(newLightState(bool)), this, SLOT(updateLightState(bool)));
+    connect(m_hue, SIGNAL(newLightState(int, bool)), this, SLOT(updateLightState(int, bool)));
 }
 
 Program::~Program()
@@ -96,10 +96,14 @@ void Program::init()
 	qWarning() << __PRETTY_FUNCTION__;
 	m_buttons->start();
 	m_leds->start();
+    m_hue->start();
 }
 
-void Program::updateLightState(bool state)
+void Program::updateLightState(int id, bool state)
 {
+    Q_UNUSED(id)
+    qDebug() << __PRETTY_FUNCTION__ << ": Updating state for light" << id << "to" << state;
+    
     if (state) {
         m_turnOnCount--;
         if (m_turnOnCount == 0) {

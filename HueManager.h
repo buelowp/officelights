@@ -33,12 +33,14 @@ public:
 	virtual ~HueManager();
 
 	bool getLightState();
+    bool getLightState(int);
+    void start();
 
 public slots:
 	void bridgeFound();
 	void bridgeStatusChange(int);
 	void lightsBusyChanged();
-	void connectedBridgeChanged();
+	void connectedBridgeChanged(); 
 	void apiKeyChanged();
 
 	void turnLightsOn();
@@ -55,17 +57,17 @@ public slots:
 
 	void setLightsColor(QColor);
 	void setLightColor(int, QColor);
-    void lightStateChanged(int);
+    void lightStateChanged(int, bool);
     void updateLightsCount(int);
 
 signals:
 	void hueBridgeFound();
 	void hueLightsFound(int);
+    void newLightState(int, bool);
+    void noLightsTurnedOn();
+    void noLightsTurnedOff();
     void updateTurnOnCount();
     void updateTurnOffCount();
-    void newLightState(bool);
-    void noLightsTurnedOff();
-    void noLightsTurnedOn();
 
 private:
 	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;

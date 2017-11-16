@@ -54,7 +54,7 @@ public slots:
     void runNextEvent();
     void updateTurnOnCount();
     void updateTurnOffCount();
-    void updateLightState(bool);
+    void updateLightState(int, bool);
 
 signals:
 	void setLedBrightness(int);

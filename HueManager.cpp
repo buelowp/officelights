@@ -29,7 +29,14 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 	m_progTimer = new QTimer(this);
 	m_apiKey = m_KeyStore.apiKey();
 	m_ipAddr = m_KeyStore.ipAddr();
+}
 
+HueManager::~HueManager()
+{
+}
+
+void HueManager::start()
+{
 	if (m_apiKey.size()) {
 		if (m_ipAddr.size())
 			m_Bridge = HueBridgeConnection::instance(m_apiKey, m_ipAddr);
@@ -41,8 +48,8 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 
 	connect(m_Lights, SIGNAL(busyChanged()), this, SLOT(lightsBusyChanged()));
     connect(m_Lights, SIGNAL(updateLightsCount(int)), this, SLOT(updateLightsCount(int)));
-    connect(m_Lights, SIGNAL(stateChanged(int)), this, SLOT(lightStateChanged(int)));
-    connect(m_Lights, SIGNAL(lightStateUpdated(int)), this, SLOT(lightStateChanged(int)));
+//    connect(m_Lights, SIGNAL(stateChanged(int)), this, SLOT(lightStateChanged(int)));
+    connect(m_Lights, SIGNAL(lightStateUpdated(int, bool)), this, SLOT(lightStateChanged(int, bool)));
     
 	if (m_Bridge) {
 		connect(m_Bridge, SIGNAL(bridgeFoundChanged()), this, SLOT(bridgeFound()));
@@ -50,23 +57,26 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 		connect(m_Bridge, SIGNAL(apiKeyChanged()), this, SLOT(apiKeyChanged()));
 		connect(m_Bridge, SIGNAL(bridgeFoundChanged()), this, SLOT(bridgeFound()));
 		connect(m_Bridge, SIGNAL(statusChanged(int)), this, SLOT(bridgeStatusChange(int)));
-	}
+	}    
 }
 
-HueManager::~HueManager()
-{
-}
-
-void HueManager::lightStateChanged(int id)
+/**
+ * \func void HueManager::lightStateChanged(int id)
+ * \param id The Hue numeric for this light
+ * \details This happens when we get a notification that the state
+ * of a specific light has changed, as a 1 based index from Hue.
+ * We translate to a zero index to ask for it from the Lights object.
+ */
+void HueManager::lightStateChanged(int id, bool state)
 {
     bool isOn = false;
-    qDebug() << __PRETTY_FUNCTION__ << ": state changed for " << id;
+    qDebug() << __PRETTY_FUNCTION__ << ": state changed for " << id << "to" << state;
     qDebug() << __PRETTY_FUNCTION__ << ": lights array has size " << m_Lights->rowCount();
     if (id > 0) {
         Light *light = m_Lights->get(id - 1);
         if (light) {
             isOn = light->on();
-            emit newLightState(isOn);
+            emit newLightState(id, isOn);
         }
         else {
             qDebug() << __PRETTY_FUNCTION__ << ": light is NULL, no signal sent";
