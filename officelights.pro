@@ -11,6 +11,8 @@ MOC_DIR = .moc
 
 LIBS += -lhue -lxkey8 -lfastled
 
+INCLUDEPATH = /usr/include/FastLED
+
 SOURCES = \
 	keystore.cpp \
 	main.cpp \
