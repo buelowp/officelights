@@ -19,16 +19,17 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 */
 #include "ButtonManager.h"
 
-static XKey8 *buttonManager;
+static XKey8 *g_buttonManager;
 
 extern "C" {
 	unsigned int buttonEvent(unsigned char *pData, unsigned int deviceID, unsigned int error)
 	{
-		return buttonManager->handleDataEvent(pData, deviceID, error);
+        qDebug() << __PRETTY_FUNCTION__ << ": handling event for" << deviceID;
+		return g_buttonManager->handleDataEvent(pData, deviceID, error);
 	}
 	unsigned int errorEvent(unsigned int deviceID, unsigned int status)
 	{
-		return buttonManager->handleErrorEvent(deviceID, status);
+		return g_buttonManager->handleErrorEvent(deviceID, status);
 	}
 }
 
@@ -42,7 +43,7 @@ ButtonManager::ButtonManager(QObject *parent) : QObject(parent)
 	connect(m_buttonManager, SIGNAL(panelConnected()), this, SLOT(panelConnected()));
 	connect(m_buttonManager, SIGNAL(buttonUp(int)), this, SLOT(buttonUp(int)));
 
-	buttonManager = m_buttonManager;
+	g_buttonManager = m_buttonManager;
 
 	for (int i = 0; i < 10; i++)
 		m_buttonState.push_back(false);

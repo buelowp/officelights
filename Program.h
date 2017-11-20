@@ -47,13 +47,13 @@ public slots:
 	void hueOtherOff();
 	void ledsOn() { m_ledState = true; }
 	void ledsOff() { m_ledState = false; }
+	void setButtonLedOn();
+    void setButtonLedOff();
 
 	void turnHueLightsOn();
 	void turnHueLightsOff();
 	void toggleLights();
     void runNextEvent();
-//    void updateTurnOnCount();
-//    void updateTurnOffCount();
     void updateLightState(int, bool);
 
 signals:
@@ -93,6 +93,9 @@ private:
 	bool m_ledState;
     int m_turnOffCount;
     int m_turnOnCount;
+    bool m_holdState;
+    int m_hueColorProgram;
+    bool m_programInit;
 };
 
 #endif /* PROGRAM_H_ */

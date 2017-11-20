@@ -22,6 +22,9 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 Program::Program(QObject *parent) : QObject(parent)
 {
 	m_ledState = false;
+    m_holdState = false;
+    m_hueColorProgram = 0;
+    m_programInit = true;
 
 	m_buttons = new ButtonManager();
 	m_leds = new LEDManager();
@@ -41,12 +44,16 @@ Program::Program(QObject *parent) : QObject(parent)
     lightsSwitchToOff->addTransition(this, SIGNAL(allLightsOff()), lightsOff);
     lightsOff->addTransition(this, SIGNAL(pendingOnStateChange()), lightsSwitchToOn);
     lightsOn->addTransition(this, SIGNAL(pendingOffStateChange()), lightsSwitchToOff);
+    lightsOn->addTransition(this, SIGNAL(turnLightsOff()), lightsSwitchToOff);
+    lightsOff->addTransition(this, SIGNAL(turnLightsOn()), lightsSwitchToOn);
     
 	connect(lightsOn, SIGNAL(entered()), this, SLOT(runNextEvent()));
 	connect(lightsOff, SIGNAL(entered()), this, SLOT(runNextEvent()));
     connect(lightsSwitchToOn, SIGNAL(entered()), this, SLOT(turnHueLightsOn()));
     connect(lightsSwitchToOff, SIGNAL(entered()), this, SLOT(turnHueLightsOff()));
 	connect(this, SIGNAL(lightPowerButtonPressed()), this, SLOT(toggleLights()));
+    connect(this, SIGNAL(allLightsOn()), this, SLOT(setButtonLedOn()));
+    connect(this, SIGNAL(allLightsOff()), this, SLOT(setButtonLedOff()));
 
 	QState *leds_off = new QState();
 	QState *leds_on = new QState();
@@ -119,19 +126,18 @@ void Program::updateLightState(int id, bool state)
     }
 }
 
-/*
-void Program::updateTurnOffCount()
+void Program::setButtonLedOff()
 {
-    m_turnOffCount++;
-    qDebug() << __PRETTY_FUNCTION__ << ": m_turnOffCount " << m_turnOffCount;
+    qDebug() << __PRETTY_FUNCTION__;
+    m_buttons->setButtonState(0, false);
 }
 
-void Program::updateTurnOnCount()
+void Program::setButtonLedOn()
 {
-    m_turnOnCount++;
-    qDebug() << __PRETTY_FUNCTION__ << ": m_turnOnCount " << m_turnOnCount;
+    qDebug() << __PRETTY_FUNCTION__;
+    m_buttons->setButtonState(0, true);
 }
-*/
+
 /**
  * \func void Program::turnHueLightsOn()
  * \details Ask the Hue manager to turn all of
@@ -168,16 +174,33 @@ void Program::turnHueLightsOff()
         emit allLightsOff();
 }
 
+/**
+ * \func void Program::runNextEvent()
+ * \detail This is where we go when we finished turning
+ * things on or off. It will set a timer to run the
+ * next event correctly.
+ */
 void Program::runNextEvent()
 {
 	QDateTime dt = QDateTime::currentDateTime();
-
-    qDebug() << __PRETTY_FUNCTION__;
     
-	if (dt.date().dayOfWeek() < 6) {
+    if (m_programInit) {
+        m_hue->setBrightness(255);
+        m_hue->setLightsColor(Qt::white);
+        m_programInit = false;
+    }
+    
+    // We don't want to run the next program
+    if (m_holdState) {
+        m_nextEvent->stop();
+        qWarning() << __PRETTY_FUNCTION__ << ": Not setting a new event, waiting for a new button press";
+        return;
+    }
+    
+    if (dt.date().dayOfWeek() < 6) {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
         
-		if ((dt.time().hour() >= 6) && (dt.time().hour() <= 16)) {
+		if ((dt.time().hour() >= 6) && (dt.time().hour() < 17)) {
 			emit pendingOnStateChange();
 			QDateTime next;
 			QTime turnOff(17, 0, 1);		// Do it one second past to avoid timing out a few ms early
@@ -185,7 +208,7 @@ void Program::runNextEvent()
 			next.setTime(turnOff);
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
-			qDebug() << __PRETTY_FUNCTION__ << ":" << dt.msecsTo(next);
+			qDebug() << __PRETTY_FUNCTION__ << ": Lights on for the next" << dt.msecsTo(next) << "milliseconds";
 		}
 		else {
 			emit pendingOffStateChange();
@@ -195,18 +218,19 @@ void Program::runNextEvent()
 			next.setTime(turnOn);
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
-			qDebug() << __PRETTY_FUNCTION__ << ":" << dt.msecsTo(next);
+			qDebug() << __PRETTY_FUNCTION__ << ": Lights should be off for the next" << dt.msecsTo(next) << "milliseconds";
 		}
 	}
 	else {
-        qDebug() << __PRETTY_FUNCTION__ << ": it's a weekend";
+        qDebug() << __PRETTY_FUNCTION__ << ": it's a weekend, adding" << 8 - dt.date().dayOfWeek() << "days";
+		emit pendingOffStateChange();
 		QDateTime next;
 		QTime turnOn(6,0,0);
 		next.setDate(dt.date().addDays(8 - dt.date().dayOfWeek()));
 		next.setTime(turnOn);
 		m_nextEvent->setInterval(dt.msecsTo(next));
         m_nextEvent->start();
-        qDebug() << __PRETTY_FUNCTION__ << ":" << dt.msecsTo(next);
+        qDebug() << __PRETTY_FUNCTION__ << ": Weekend, setting lights to turn on in" << dt.msecsTo(next) << "milliseconds";
 	}
 }
 
@@ -268,6 +292,8 @@ void Program::toggleLights()
 	else {
 		emit turnLightsOn();
 	}
+    m_holdState = !m_holdState;
+    qDebug() << __PRETTY_FUNCTION__ << ": m_holdState" << m_holdState;
 }
 
 void Program::turnOffEvening()
@@ -280,7 +306,14 @@ void Program::buttonPressed(int b)
 	qWarning() << __PRETTY_FUNCTION__ << ": buttonstate for" << b << " is" << m_buttons->buttonState(0);
 	switch (b) {
 	case 0:
-		toggleLights();
+        if (m_hueColorProgram != 0) {
+            m_hue->setLightsColor(QColor(Qt::white));
+            m_buttons->setButtonState(m_hueColorProgram, false);
+            m_hueColorProgram = 0;
+        }
+        else {
+            toggleLights();
+        }
 		break;
 	case 1:
 	case 2:
@@ -292,16 +325,25 @@ void Program::buttonPressed(int b)
 		emit runLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::green));
+        m_buttons->setButtonState(b, true);
+        m_buttons->setButtonState(0, false);
+        m_hueColorProgram = b;
 		break;
 	case 8:
 		emit runLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::yellow));
+        m_buttons->setButtonState(b, true);
+        m_buttons->setButtonState(0, false);
+        m_hueColorProgram = b;
 		break;
 	case 9:
 		emit runLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::red));
+        m_hueColorProgram = b;
+        m_buttons->setButtonState(b, true);
+        m_buttons->setButtonState(0, false);
 		break;
 	default:
 		qWarning() << __PRETTY_FUNCTION__ << ": Invalid button value b =" << b;
