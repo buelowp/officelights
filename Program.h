@@ -55,6 +55,9 @@ public slots:
 	void toggleLights();
     void runNextEvent();
     void updateLightState(int, bool);
+    
+    void echoLightsOn();
+    void echoLightsOff();
 
 signals:
 	void setLedBrightness(int);

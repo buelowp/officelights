@@ -38,19 +38,22 @@ Program::Program(QObject *parent) : QObject(parent)
     QState *lightsInit = new QState();
     QState *lightsSwitchToOff = new QState();
     QState *lightsSwitchToOn = new QState();
+    QState *lightsSwitchEvent = new QState();
 
-    lightsInit->addTransition(this, SIGNAL(initializationDone()), lightsSwitchToOff);
+    lightsInit->addTransition(this, SIGNAL(initializationDone()), lightsSwitchEvent);
     lightsSwitchToOn->addTransition(this, SIGNAL(allLightsOn()), lightsOn);
     lightsSwitchToOff->addTransition(this, SIGNAL(allLightsOff()), lightsOff);
-    lightsOff->addTransition(this, SIGNAL(pendingOnStateChange()), lightsSwitchToOn);
-    lightsOn->addTransition(this, SIGNAL(pendingOffStateChange()), lightsSwitchToOff);
-    lightsOn->addTransition(this, SIGNAL(turnLightsOff()), lightsSwitchToOff);
-    lightsOff->addTransition(this, SIGNAL(turnLightsOn()), lightsSwitchToOn);
+    lightsOff->addTransition(this, SIGNAL(pendingOnStateChange()), lightsSwitchEvent);
+    lightsOn->addTransition(this, SIGNAL(pendingOffStateChange()), lightsSwitchEvent);
+    lightsSwitchEvent->addTransition(this, SIGNAL(turnLightsOn()), lightsSwitchToOn);
+    lightsSwitchEvent->addTransition(this, SIGNAL(turnLightsOff()), lightsSwitchToOff);
     
-	connect(lightsOn, SIGNAL(entered()), this, SLOT(runNextEvent()));
-	connect(lightsOff, SIGNAL(entered()), this, SLOT(runNextEvent()));
+    connect(lightsSwitchEvent, SIGNAL(entered()), this, SLOT(runNextEvent()));
     connect(lightsSwitchToOn, SIGNAL(entered()), this, SLOT(turnHueLightsOn()));
     connect(lightsSwitchToOff, SIGNAL(entered()), this, SLOT(turnHueLightsOff()));
+    connect(lightsOn, SIGNAL(entered()), this, SLOT(echoLightsOn()));
+    connect(lightsOff, SIGNAL(entered()), this, SLOT(echoLightsOff()));
+    
 	connect(this, SIGNAL(lightPowerButtonPressed()), this, SLOT(toggleLights()));
     connect(this, SIGNAL(allLightsOn()), this, SLOT(setButtonLedOn()));
     connect(this, SIGNAL(allLightsOff()), this, SLOT(setButtonLedOff()));
@@ -68,6 +71,7 @@ Program::Program(QObject *parent) : QObject(parent)
     m_huesm->addState(lightsInit);
     m_huesm->addState(lightsSwitchToOff);
     m_huesm->addState(lightsSwitchToOn);
+    m_huesm->addState(lightsSwitchEvent);
 	m_huesm->setInitialState(lightsInit);
 	m_huesm->start();
 
@@ -104,6 +108,16 @@ void Program::init()
     m_hue->start();
 }
 
+void Program::echoLightsOff()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+}
+
+void Program::echoLightsOn()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+}
+
 /**
  * \func void Program::updateLightState(int id, bool state)
  * \details Sets the state to a value. The state map is reset
@@ -118,11 +132,20 @@ void Program::updateLightState(int id, bool state)
     qDebug() << __PRETTY_FUNCTION__ << ": Updating state for light" << id << "to" << state;
     
     m_lightsState[id] = state;
+        qDebug() << __PRETTY_FUNCTION__ << ": m_lightsState.size is" << m_lightsState.size();
+        qDebug() << __PRETTY_FUNCTION__ << ": m_lightCount is" << m_lightCount;
+        qDebug() << __PRETTY_FUNCTION__ << ": Are all lights on?" << m_hue->allLightsAreOn();
+        qDebug() << __PRETTY_FUNCTION__ << ": Are all lights off?" << m_hue->allLightsAreOff();
     if (m_lightsState.size() == m_lightCount) {
-        if (m_hue->allLightsAreOn())
+        qDebug() << __PRETTY_FUNCTION__ << ": Handling the state change";
+        if (m_hue->allLightsAreOn()) {
+            qDebug() << __PRETTY_FUNCTION__ << ": emitting all lights on";
             emit allLightsOn();
-        if (m_hue->allLightsAreOff())
+        }
+        if (m_hue->allLightsAreOff()) {
+            qDebug() << __PRETTY_FUNCTION__ << ": emitting all lights off";
             emit allLightsOff();
+        }
     }
 }
 
@@ -151,10 +174,16 @@ void Program::turnHueLightsOn()
     int count = 0;
     
     m_lightsState.clear();
-    
+// Fix this to set to white and bright instead of just turning on. We're getting too many state changes we can't easily track    
     qDebug() << __PRETTY_FUNCTION__;
-    if ((count = m_hue->turnLightsOn()) == 0)
+    if ((count = m_hue->turnLightsOn()) == 0) {
+        qDebug() << __PRETTY_FUNCTION__ << ": All lights already on, just sending the all lights on message";
+        m_programInit = false;
         emit allLightsOn();
+    }
+    else {
+        qDebug() << __PRETTY_FUNCTION__ << ": count of lights changed is" << count;
+    }
 }
 
 /**
@@ -184,6 +213,7 @@ void Program::runNextEvent()
 {
 	QDateTime dt = QDateTime::currentDateTime();
     
+/*
     if (m_programInit) {
         m_hue->setBrightness(255);
         m_hue->setLightsColor(Qt::white);
@@ -196,26 +226,26 @@ void Program::runNextEvent()
         qWarning() << __PRETTY_FUNCTION__ << ": Not setting a new event, waiting for a new button press";
         return;
     }
-    
+*/    
     if (dt.date().dayOfWeek() < 6) {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
         
-		if ((dt.time().hour() >= 6) && (dt.time().hour() < 17)) {
-			emit pendingOnStateChange();
+		if ((dt.time().hour() >= 6) && (dt.time().hour() < 16)) {
+			emit turnLightsOn();
 			QDateTime next;
-			QTime turnOff(17, 0, 1);		// Do it one second past to avoid timing out a few ms early
 			next.setDate(dt.date());
-			next.setTime(turnOff);
+			next.setTime(QTime(16, 0, 0));
+            m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
 			qDebug() << __PRETTY_FUNCTION__ << ": Lights on for the next" << dt.msecsTo(next) << "milliseconds";
 		}
 		else {
-			emit pendingOffStateChange();
+			emit turnLightsOff();
 			QDateTime next;
-			QTime turnOn(6,0,0);
 			next.setDate(dt.date().addDays(1));
-			next.setTime(turnOn);
+			next.setTime(QTime(6,0,0));
+            m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
 			qDebug() << __PRETTY_FUNCTION__ << ": Lights should be off for the next" << dt.msecsTo(next) << "milliseconds";
@@ -223,11 +253,11 @@ void Program::runNextEvent()
 	}
 	else {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekend, adding" << 8 - dt.date().dayOfWeek() << "days";
-		emit pendingOffStateChange();
+		emit turnLightsOff();
 		QDateTime next;
-		QTime turnOn(6,0,0);
 		next.setDate(dt.date().addDays(8 - dt.date().dayOfWeek()));
-		next.setTime(turnOn);
+		next.setTime(QTime(6,0,0));
+        m_nextEvent->stop();
 		m_nextEvent->setInterval(dt.msecsTo(next));
         m_nextEvent->start();
         qDebug() << __PRETTY_FUNCTION__ << ": Weekend, setting lights to turn on in" << dt.msecsTo(next) << "milliseconds";
@@ -262,7 +292,7 @@ void Program::hueBridgeFound()
 void Program::hueLightsFound(int c)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": found" << c << "lights";
-    m_lightCount = 4;
+    m_lightCount = c;
     emit initializationDone();
 }
 
@@ -287,10 +317,10 @@ void Program::runHueAltProgram()
 void Program::toggleLights()
 {
 	if (m_hue->getLightState()) {
-		emit turnLightsOff();
+		emit pendingOffStateChange();
 	}
 	else {
-		emit turnLightsOn();
+		emit pendingOnStateChange();
 	}
     m_holdState = !m_holdState;
     qDebug() << __PRETTY_FUNCTION__ << ": m_holdState" << m_holdState;
