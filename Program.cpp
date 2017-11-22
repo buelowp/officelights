@@ -24,6 +24,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	m_ledState = false;
     m_holdState = false;
     m_hueColorProgram = 0;
+    m_ledColorProgram = 10;
     m_programInit = true;
     
     m_blockForNotification.unlock();
@@ -182,6 +183,7 @@ void Program::runUpdateTimeout()
  */
 void Program::updateLightState(int id, bool state)
 {
+    Q_UNUSED(state)
     qDebug() << __PRETTY_FUNCTION__ << ": Light state change for id" << id;
     m_blockForNotification.unlock();
 }
@@ -274,11 +276,11 @@ void Program::runNextEvent()
     if (dt.date().dayOfWeek() < 6) {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
         
-		if ((dt.time().hour() >= 6) && ((dt.time().hour() >= 12) && (dt.time().minute() < 24))) {
+		if ((dt.time().hour() >= 6) && (dt.time().hour() < 12)) {
 			emit turnLightsOn();
 			QDateTime next;
 			next.setDate(dt.date());
-			next.setTime(QTime(12, 24, 0));
+			next.setTime(QTime(13, 01, 0));
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
             m_nextEvent->start();
@@ -393,11 +395,61 @@ void Program::buttonPressed(int b)
         }
 		break;
 	case 1:
+        if (m_ledColorProgram == 1) {
+            emit endLedProgram(b);
+            m_buttons->setButtonState(b, false);
+            m_ledColorProgram = 10;
+        }
+        else {
+            if (m_ledColorProgram != 10)
+                m_buttons->setButtonState(m_ledColorProgram, false);
+            m_ledColorProgram = b;
+            m_buttons->setButtonState(m_ledColorProgram, true);
+            emit runLedProgram(b);
+        }
+        break;   
 	case 2:
+        if (m_ledColorProgram == 2) {
+            emit endLedProgram(b);
+            m_buttons->setButtonState(b, false);
+            m_ledColorProgram = 10;
+        }
+        else {
+            if (m_ledColorProgram != 10)
+                m_buttons->setButtonState(m_ledColorProgram, false);
+            m_ledColorProgram = b;
+            m_buttons->setButtonState(m_ledColorProgram, true);
+            emit runLedProgram(b);
+        }
+        break;   
 	case 3:
+        if (m_ledColorProgram == 3) {
+            emit endLedProgram(b);
+            m_buttons->setButtonState(b, false);
+            m_ledColorProgram = 10;
+        }
+        else {
+            if (m_ledColorProgram != 10)
+                m_buttons->setButtonState(m_ledColorProgram, false);
+            m_ledColorProgram = b;
+            m_buttons->setButtonState(m_ledColorProgram, true);
+            emit runLedProgram(b);
+        }
+        break;   
 	case 4:
-		emit runLedProgram(b);
-		break;
+        if (m_ledColorProgram == 4) {
+            emit endLedProgram(b);
+            m_buttons->setButtonState(b, false);
+            m_ledColorProgram = 10;
+        }
+        else {
+            if (m_ledColorProgram != 10)
+                m_buttons->setButtonState(m_ledColorProgram, false);
+            m_ledColorProgram = b;
+            m_buttons->setButtonState(m_ledColorProgram, true);
+            emit runLedProgram(b);
+        }
+        break;   
 	case 5:
 		emit runLedProgram(b);
 		emit turnLightsOn();

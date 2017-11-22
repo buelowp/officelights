@@ -96,6 +96,7 @@ signals:
     void startNextEvent();
     void colorChangeComplete();
     void brightnessChangeComplete();
+    void endLedProgram(int);
 
 private:
 	void turnOnMorning();
@@ -116,6 +117,7 @@ private:
     int m_turnOnCount;
     bool m_holdState;
     int m_hueColorProgram;
+    int m_ledColorProgram;
     bool m_programInit;
 };
 
