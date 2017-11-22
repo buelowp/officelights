@@ -25,6 +25,8 @@ Program::Program(QObject *parent) : QObject(parent)
     m_holdState = false;
     m_hueColorProgram = 0;
     m_programInit = true;
+    
+    m_blockForNotification.unlock();
 
 	m_buttons = new ButtonManager();
 	m_leds = new LEDManager();
@@ -54,6 +56,8 @@ Program::Program(QObject *parent) : QObject(parent)
     connect(lightsSwitchToOn, SIGNAL(entered()), this, SLOT(turnHueLightsOn()));
     connect(lightsSwitchToOff, SIGNAL(entered()), this, SLOT(turnHueLightsOff()));
     connect(lightsEventTimeout, SIGNAL(entered()), this, SLOT(runUpdateTimeout()));
+    connect(lightsOn, SIGNAL(entered()), this, SLOT(releaseLock()));
+    connect(lightsOff, SIGNAL(entered()), this, SLOT(releaseLock()));
     
 	connect(this, SIGNAL(lightPowerButtonPressed()), this, SLOT(toggleLights()));
     connect(this, SIGNAL(allLightsOn()), this, SLOT(setButtonLedOn()));
@@ -96,7 +100,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(this, SIGNAL(endLedProgram()), m_leds, SLOT(endProgram()));
 	connect(m_nextEvent, SIGNAL(timeout()), this, SLOT(runUpdateTimeout()));
     connect(m_hue, SIGNAL(newLightState(int, bool)), this, SLOT(updateLightState(int, bool)));
-    connect(m_hue, SIGNAL(allLightsUpdated()), this, SLOT(allLightsUpdated()));
+//    connect(m_hue, SIGNAL(allLightsUpdated()), this, SLOT(allLightsUpdated()));
 }
 
 Program::~Program()
@@ -124,7 +128,41 @@ void Program::echoLightsOn()
 
 void Program::allLightsUpdated()
 {
+//    qDebug() << __PRETTY_FUNCTION__;
+    /*
+    if (m_hue->allLightsAreOn()) {
+        emit allLightsOn();
+    }
+    if (m_hue->allLightsAreOff()) {
+        emit allLightsOff();
+    }
+    */
+}
+
+void Program::releaseLock()
+{
     qDebug() << __PRETTY_FUNCTION__;
+    m_blockForNotification.unlock();
+}
+
+void Program::setColor(QColor c)
+{
+    for (int i = 0; i < m_lightCount; i++) {
+//        m_blockForNotification.lock();
+        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to color" << c;
+        m_hue->setLightColor(i, c);
+    }
+    emit colorChangeComplete();
+}
+
+void Program::setBrightness(int b)
+{
+    for (int i = 0; i < m_lightCount; i++) {
+//        m_blockForNotification.lock();
+        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to brightness" << b;
+        m_hue->setBrightness(i, b);
+    }
+    emit brightnessChangeComplete();
 }
 
 void Program::runUpdateTimeout()
@@ -144,24 +182,8 @@ void Program::runUpdateTimeout()
  */
 void Program::updateLightState(int id, bool state)
 {
-    qDebug() << __PRETTY_FUNCTION__ << ": Updating state for light" << id << "to" << state;
-    
-    m_lightsState[id] = state;
-//        qDebug() << __PRETTY_FUNCTION__ << ": m_lightsState.size is" << m_lightsState.size();
-//        qDebug() << __PRETTY_FUNCTION__ << ": m_lightCount is" << m_lightCount;
-//        qDebug() << __PRETTY_FUNCTION__ << ": Are all lights on?" << m_hue->allLightsAreOn();
-//        qDebug() << __PRETTY_FUNCTION__ << ": Are all lights off?" << m_hue->allLightsAreOff();
-    if (m_lightsState.size() == m_lightCount) {
-//        qDebug() << __PRETTY_FUNCTION__ << ": Handling the state change";
-        if (m_hue->allLightsAreOn()) {
-//            qDebug() << __PRETTY_FUNCTION__ << ": emitting all lights on";
-            emit allLightsOn();
-        }
-        if (m_hue->allLightsAreOff()) {
-//            qDebug() << __PRETTY_FUNCTION__ << ": emitting all lights off";
-            emit allLightsOff();
-        }
-    }
+    qDebug() << __PRETTY_FUNCTION__ << ": Light state change for id" << id;
+    m_blockForNotification.unlock();
 }
 
 void Program::setButtonLedOff()
@@ -186,18 +208,22 @@ void Program::setButtonLedOn()
  */
 void Program::turnHueLightsOn()
 {
-    int count = 0;
-    
-    m_lightsState.clear();
-// Fix this to set to white and bright instead of just turning on. We're getting too many state changes we can't easily track    
-    qDebug() << __PRETTY_FUNCTION__;
-    if ((count = m_hue->turnLightsOn()) == 0) {
-        qDebug() << __PRETTY_FUNCTION__ << ": All lights already on, just sending the all lights on message";
-        emit allLightsOn();
+    for (int i = 0; i < m_lightCount; i++) {
+        if (!m_hue->getLightState(i)) {
+            while (!m_blockForNotification.tryLock()) {
+                QCoreApplication::processEvents();
+            }
+            qDebug() << __PRETTY_FUNCTION__ << ": turning on light" << i;
+            m_hue->turnLightOn(i);
+        }
     }
-    else {
-        qDebug() << __PRETTY_FUNCTION__ << ": count of lights changed is" << count;
+    // Block one more time while we wait for the last transition to complete
+    while (!m_blockForNotification.tryLock()) {
+        QCoreApplication::processEvents();
     }
+    setBrightness(254);
+    setColor(QColor(Qt::white));
+    emit allLightsOn();
 }
 
 /**
@@ -210,11 +236,21 @@ void Program::turnHueLightsOn()
  */
 void Program::turnHueLightsOff()
 {
-    int count = 0;
-    
     qDebug() << __PRETTY_FUNCTION__;
-    if ((count = m_hue->turnLightsOff()) == 0)
-        emit allLightsOff();
+    for (int i = 0; i < m_lightCount; i++) {
+        if (m_hue->getLightState(i)) {
+            while (!m_blockForNotification.tryLock()) {
+                QCoreApplication::processEvents();
+            }
+            qDebug() << __PRETTY_FUNCTION__ << ": turn off light" << i;
+            m_hue->turnLightOff(i);
+        }
+    }
+    // Block one more time while we wait for the last transition to complete
+    while (!m_blockForNotification.tryLock()) {
+        QCoreApplication::processEvents();
+    }    
+    emit allLightsOff();
 }
 
 /**
@@ -238,11 +274,11 @@ void Program::runNextEvent()
     if (dt.date().dayOfWeek() < 6) {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
         
-		if ((dt.time().hour() >= 6) && ((dt.time().hour() >= 10) && (dt.time().minute() < 42))) {
+		if ((dt.time().hour() >= 6) && ((dt.time().hour() >= 12) && (dt.time().minute() < 24))) {
 			emit turnLightsOn();
 			QDateTime next;
 			next.setDate(dt.date());
-			next.setTime(QTime(10, 42, 0));
+			next.setTime(QTime(12, 24, 0));
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
             m_nextEvent->start();
@@ -327,7 +363,7 @@ void Program::runHueAltProgram()
 
 void Program::toggleLights()
 {
-	if (m_hue->getLightState()) {
+	if (m_hue->allLightsAreOn()) {
 		emit pendingOffStateChange();
 	}
 	else {

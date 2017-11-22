@@ -26,13 +26,19 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #include <libhue/lights.h>
 #include "keystore.h"
 
+typedef enum HUEACTION {
+    HueState = 0,
+    HueColor,
+    HueBrightness,
+} HueAction;
+
 class HueManager : public QObject {
 	Q_OBJECT
 public:
 	HueManager(QObject *parent = 0);
 	virtual ~HueManager();
 
-	bool getLightState();
+//	bool getLightState();
     bool getLightState(int);
     void start();
 
@@ -84,6 +90,8 @@ private:
 	QString m_ipAddr;
 	QTimer *m_progTimer;
     QMap<int, bool> m_lightState;
+    QMap<int, HueAction> m_lightActionQueue;
+    
 	int m_ct;
     int m_stateChangeInProgress;
     int m_stateCount;

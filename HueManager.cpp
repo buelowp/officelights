@@ -114,17 +114,15 @@ bool HueManager::allLightsAreOff()
  * \func bool HueManager::getLightState()
  * \return Returns true if any one of the lights are on, false if none are on
  */
-bool HueManager::getLightState()
+bool HueManager::getLightState(int i)
 {
-	bool state = false;
-
-	for (int i = 0; i < m_Lights->rowCount(); i++) {
+    if (i < m_Lights->rowCount()) {
 		Light *light = m_Lights->get(i);
 		if (light->on()) {
-			state = true;
+			return true;
 		}
 	}
-	return state;
+	return false;
 }
 
 void HueManager::bridgeFound()

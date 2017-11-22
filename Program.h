@@ -40,6 +40,8 @@ public:
 	virtual ~Program();
 
 	void init();
+    void setColor(QColor);
+    void setBrightness(int);
 
 public slots:
 	void buttonPressed(int);
@@ -68,6 +70,7 @@ public slots:
     
     void allLightsUpdated();
     void runUpdateTimeout();
+    void releaseLock();
 
 signals:
 	void setLedBrightness(int);
@@ -91,6 +94,8 @@ signals:
     void allLightsOff();
     
     void startNextEvent();
+    void colorChangeComplete();
+    void brightnessChangeComplete();
 
 private:
 	void turnOnMorning();
@@ -103,6 +108,7 @@ private:
 	QStateMachine *m_ledsm;
 	QTimer *m_nextEvent;
     QMap<int, bool> m_lightsState;
+    QMutex m_blockForNotification;
 
     int m_lightCount;
 	bool m_ledState;
