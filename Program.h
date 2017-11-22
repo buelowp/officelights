@@ -24,6 +24,13 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #include "ButtonManager.h"
 #include "LEDManager.h"
 #include "HueManager.h"
+#include "statemachines/HueInitState.h"
+#include "statemachines/HueOnState.h"
+#include "statemachines/HueOffState.h"
+#include "statemachines/HueTransitionToOffState.h"
+#include "statemachines/HueTransitionToOnState.h"
+#include "statemachines/HueEventState.h"
+#include "statemachines/HueEventTimeout.h"
 
 
 class Program : public QObject {
@@ -58,6 +65,9 @@ public slots:
     
     void echoLightsOn();
     void echoLightsOff();
+    
+    void allLightsUpdated();
+    void runUpdateTimeout();
 
 signals:
 	void setLedBrightness(int);
@@ -79,6 +89,8 @@ signals:
     void pendingOnStateChange();
     void allLightsOn();
     void allLightsOff();
+    
+    void startNextEvent();
 
 private:
 	void turnOnMorning();

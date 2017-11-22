@@ -23,6 +23,7 @@ HueManager::HueManager(QObject *parent) : QObject(parent)
 {
 	m_ct = 153;
     m_stateChangeInProgress = 0;
+    m_stateCount = 0;
 
 	m_BridgeStatus = HueBridgeConnection::BridgeStatus::BridgeStatusSearching;
 	m_Lights = new Lights();
@@ -69,17 +70,20 @@ void HueManager::start()
  */
 void HueManager::lightStateChanged(int id, bool state)
 {
-    bool isOn = false;
-    qDebug() << __PRETTY_FUNCTION__ << ": state changed for " << id << "to" << state;
-    qDebug() << __PRETTY_FUNCTION__ << ": lights array has size " << m_Lights->rowCount();
-    if (id > 0) {
-        Light *light = m_Lights->get(id - 1);
-        if (light) {
-            isOn = light->on();
-            emit newLightState(id, isOn);
+//    qDebug() << __PRETTY_FUNCTION__ << ": state changed for " << id << "to" << state;
+//    qDebug() << __PRETTY_FUNCTION__ << ": lights array has size " << m_Lights->rowCount();
+    qDebug() << __PRETTY_FUNCTION__ << ": state count is" << m_stateCount;
+
+    if (m_stateCount != 0) {
+        if (id > 0) {
+            Light *light = m_Lights->get(id - 1);
+            if (light) {
+                m_stateCount--;
+                emit newLightState(id, light->on());
+            }
         }
-        else {
-            qDebug() << __PRETTY_FUNCTION__ << ": light is NULL, no signal sent";
+        if (m_stateCount == 0) {
+            emit allLightsUpdated();
         }
     }
 }
@@ -125,7 +129,7 @@ bool HueManager::getLightState()
 
 void HueManager::bridgeFound()
 {
-	qWarning() << __FUNCTION__ << ": Found a bridge, searching for lights";
+	qDebug() << __FUNCTION__ << ": Found a bridge, searching for lights";
 	m_Lights->refresh();
 	emit hueBridgeFound();
 }
@@ -138,15 +142,22 @@ void HueManager::updateLightsCount(int c)
 }
 
 void HueManager::lightsBusyChanged()
-{
+{/*
+    if (m_stateCount > 0) {
+        m_stateCount--;
+        qDebug() << __PRETTY_FUNCTION__ << ": Decrementing Hue state change counter to" << m_stateCount;
+    }
+    else {
+        qDebug() << __PRETTY_FUNCTION__ << ": State count is now 0";
+        emit allLightsUpdated();
+    }
+
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
-		qWarning() << __PRETTY_FUNCTION__ << "Found light" << light->name() << ", state" << light->on();
-//		if (light->on()) {
-//			light->setOn(false);
-//		}
+		qDebug() << __PRETTY_FUNCTION__ << "Found light id" << light->id() << ": with name" << light->name() << ", state" << light->on();
+        emit allLightsUpdated();
 	}
-//	emit hueLightsFound(m_Lights->rowCount());
+*/
 }
 
 void HueManager::apiKeyChanged()
@@ -157,7 +168,7 @@ void HueManager::apiKeyChanged()
 
 void HueManager::connectedBridgeChanged()
 {
-	qWarning() << __FUNCTION__ << ": Got a connectedBridgeChanged() message";
+	qDebug() << __FUNCTION__ << ": Got a connectedBridgeChanged() message";
 }
 
 void HueManager::bridgeStatusChange(int num)
@@ -186,13 +197,17 @@ int HueManager::turnLightsOn()
     int count = 0;
     
     qDebug() << __PRETTY_FUNCTION__ << ": Turning on " << m_Lights->rowCount() << " lights";
+    
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		Light *light = m_Lights->get(i);
         if (!light->on()) {
+            light->setBri(254);
+            light->setColor(Qt::white);
             light->setOn(true);
             count++;
         }
 	}
+    m_stateCount = count;
 	return count;
 }
 
@@ -208,6 +223,7 @@ int HueManager::turnLightsOff()
             count++;
         }
 	}
+	m_stateCount = count;
 	return count;
 }
 
@@ -217,6 +233,7 @@ bool HueManager::turnLightOn(int l)
 		Light *light = m_Lights->get(l);
         if (!light->on()) {
             light->setOn(true);
+            m_stateCount++;
             return true;
         }
 	}
@@ -229,6 +246,7 @@ bool HueManager::turnLightOff(int l)
 		Light *light = m_Lights->get(l);
         if (light->on()) {
             light->setOn(false);
+            m_stateCount++;
             return true;
         }
 	}
@@ -241,6 +259,7 @@ void HueManager::setBrightness(int b)
 		for (int i = 0; i < m_Lights->rowCount(); i++) {
 			Light *light = m_Lights->get(i);
 			light->setBri(b);
+            m_stateCount++;
 		}
 	}
 }
@@ -251,6 +270,7 @@ void HueManager::setBrightness(int b, int l)
 		if (l < m_Lights->rowCount()) {
 			Light *light = m_Lights->get(l);
 			light->setBri(b);
+            m_stateCount++;
 		}
 	}
 }
@@ -260,6 +280,7 @@ void HueManager::setLightsColor(QColor c)
 	m_progTimer->stop();
 	for (int i = 0; i < m_Lights->rowCount(); i++) {
 		m_Lights->get(i)->setColor(c);
+        m_stateCount++;
 	}
 }
 
@@ -268,6 +289,7 @@ void HueManager::setLightColor(int l, QColor c)
 	if (l < m_Lights->rowCount()) {
 		Light *light = m_Lights->get(l);
 		light->setColor(c);
+        m_stateCount++;
 	}
 }
 
@@ -277,6 +299,7 @@ void HueManager::setLightsCTColor(quint16 ct)
 		for (int i = 0; i < m_Lights->rowCount(); i++) {
 			Light *light = m_Lights->get(i);
 			light->setCt(ct);
+            m_stateCount++;
 		}
 	}
 }
@@ -287,6 +310,7 @@ void HueManager::setLightCTColor(int l, quint16 ct)
 		if (l < m_Lights->rowCount()) {
 			Light *light = m_Lights->get(l);
 			light->setCt(ct);
+            m_stateCount++;
 		}
 	}
 }

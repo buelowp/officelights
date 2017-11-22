@@ -71,6 +71,7 @@ signals:
     void noLightsTurnedOff();
     void updateTurnOnCount();
     void updateTurnOffCount();
+    void allLightsUpdated();
 
 private:
 	enum HueBridgeConnection::BridgeStatus m_BridgeStatus;
@@ -85,6 +86,7 @@ private:
     QMap<int, bool> m_lightState;
 	int m_ct;
     int m_stateChangeInProgress;
+    int m_stateCount;
 };
 
 #endif /* HUEMANAGER_H_ */

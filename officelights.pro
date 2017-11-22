@@ -6,12 +6,12 @@ QT += network core
 QMAKE_CXXFLAGS += -std=c++11
 
 DESTDIR = bin
-OBJECTS_DI = .obj
+OBJECTS_DIR = .obj
 MOC_DIR = .moc
 
 LIBS += -lhue -lxkey8 -lfastled
 
-INCLUDEPATH = /usr/include/FastLED
+INCLUDEPATH = /usr/include/FastLED statemachines
 
 SOURCES = \
 	keystore.cpp \
@@ -19,12 +19,26 @@ SOURCES = \
 	Program.cpp \
 	ButtonManager.cpp \
 	LEDManager.cpp \
-	HueManager.cpp
+	HueManager.cpp \
+	statemachines/HueInitState.cpp \
+	statemachines/HueEventState.cpp \
+	statemachines/HueOffState.cpp \
+	statemachines/HueOnState.cpp \
+	statemachines/HueTransitionToOffState.cpp \
+	statemachines/HueTransitionToOnState.cpp \
+	statemachines/HueEventTimeout.cpp
 		
 HEADERS = \
 	keystore.h \
 	Program.h \
 	ButtonManager.h \
 	LEDManager.h \
-	HueManager.h
+	HueManager.h \
+	statemachines/HueInitState.h \
+	statemachines/HueEventState.h \
+	statemachines/HueOffState.h \
+	statemachines/HueOnState.h \
+	statemachines/HueTransitionToOffState.h \
+	statemachines/HueTransitionToOnState.h \
+	statemachines/HueEventTimeout.h
 		
