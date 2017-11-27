@@ -25,6 +25,8 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #include <functional>
 #include <FastLED/FastLED.h>
 
+#include "ledprogs/twinkles.h"
+
 #define NUM_LEDS	68
 #define SPI_BUS    0
 #define SPI_CS	   0
@@ -34,6 +36,12 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #define BRIGHTNESS          96
 #define FRAMES_PER_SECOND 	120
 
+const TProgmemRGBPalette16 Snow_p =
+{  0x404040, 0x404040, 0x404040, 0x404040,
+   0x404040, 0x404040, 0x404040, 0x404040,
+   0x404040, 0x404040, 0x404040, 0x404040,
+   0x404040, 0x404040, 0x404040, 0xFFFFFF
+};
 
 class LEDManager : public QThread {
 	Q_OBJECT
@@ -46,7 +54,7 @@ public slots:
 	void setRGB(int, int, int);
 	void turnOff();
 	void setProgram(int);
-	void endProgram();
+	void endProgram(int);
 
 signals:
 	void programDone(int);
@@ -77,6 +85,7 @@ private:
 	void yellow();
 	void green();
 
+    Twinkles *twinkles;
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;
 	bool m_allowRun;

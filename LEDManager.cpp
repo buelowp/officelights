@@ -43,6 +43,7 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
     m_patterns.push_back(std::bind(&LEDManager::sinelon, this));
     m_patterns.push_back(std::bind(&LEDManager::juggle, this));
     m_patterns.push_back(std::bind(&LEDManager::bpm, this));
+    twinkles = new Twinkles(m_leds, Snow_p);
 }
 
 LEDManager::~LEDManager()
@@ -54,12 +55,14 @@ void LEDManager::run()
 	qWarning() << __PRETTY_FUNCTION__ << ": Starting LED control thread";
 	turnLedsOff();
 	while (1) {
+        qDebug() << __PRETTY_FUNCTION__ << ": program change is" << m_programChange;
 		if (m_programChange) {
+            qDebug() << __PRETTY_FUNCTION__ << ": Switching to new program" << m_currentProgram;
 			runProgram(m_currentProgram);
 			emit programStarted(m_currentProgram);
 			m_programChange = false;
 		}
-		QThread::msleep(100);
+		QThread::msleep(1000);
 	}
 	qWarning() << __PRETTY_FUNCTION__ << ": exiting thread";
 }
@@ -75,19 +78,21 @@ void LEDManager::turnLedsOff()
 void LEDManager::setProgram(int p)
 {
 	if (m_currentProgram == p) {
-		endProgram();
+        qDebug() << __PRETTY_FUNCTION__ << ": Ending program" << p;
+		endProgram(p);
 	}
 	else {
+        qDebug() << __PRETTY_FUNCTION__ << ": New program" << p << "requested";
 		// Allow any old program to finish first
 		m_allowRun = false;
-		QThread::msleep(250);
-		m_programChange = true;
+		QThread::msleep(100);
 		m_currentProgram = p;
 		m_allowRun = true;
+		m_programChange = true;
 	}
 }
 
-void LEDManager::endProgram()
+void LEDManager::endProgram(int)
 {
 	qWarning() << __PRETTY_FUNCTION__;
 	if (m_currentProgram >= 0) {
@@ -115,7 +120,7 @@ void LEDManager::runProgram(int p)
 		demo();
 		break;
 	case 4:
-		pulse();
+//		christmas();
 		break;
 	case 5:
 		green();
@@ -140,6 +145,7 @@ void LEDManager::setBrightness(int b)
 
 void LEDManager::red()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	while (m_allowRun) {
 		emit startLedProgram();
 		for (int i = 0; i < NUM_LEDS; i++) {
@@ -149,11 +155,11 @@ void LEDManager::red()
 		FastLED.show();
 		QThread::msleep(100);
 	}
-	endProgram();
 }
 
 void LEDManager::yellow()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	while (m_allowRun) {
 		emit startLedProgram();
 		for (int i = 0; i < NUM_LEDS; i++) {
@@ -163,11 +169,11 @@ void LEDManager::yellow()
 		FastLED.show();
 		QThread::msleep(100);
 	}
-	endProgram();
 }
 
 void LEDManager::green()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	while (m_allowRun) {
 		emit startLedProgram();
 		for (int i = 0; i < NUM_LEDS; i++) {
@@ -177,7 +183,6 @@ void LEDManager::green()
 		FastLED.show();
 		QThread::msleep(100);
 	}
-	endProgram();
 }
 
 void LEDManager::setRGB(int r, int g, int b)
@@ -217,6 +222,7 @@ void LEDManager::pulse()
 	uint8_t brightness = 1;
 	int direction = 1;
 
+    qDebug() << __PRETTY_FUNCTION__;
 	for (int i = 0; i < NUM_LEDS; i++) {
 		m_leds[i] = CRGB::Green;
 	}
@@ -233,16 +239,16 @@ void LEDManager::pulse()
 
 		FastLED.setBrightness(brightness);
 		FastLED.show();
-		QThread::msleep(10);
+		QCoreApplication::processEvents();
 	}
-	endProgram();
 }
 
 void LEDManager::cylon()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	static uint8_t hue = 0;
-	while (m_allowRun) {
 		emit startLedProgram();
+	while (m_allowRun) {
 		// First slide the led in one direction
 		for(int i = 0; i < NUM_LEDS; i++) {
 			// Set the i'th led to red
@@ -268,18 +274,25 @@ void LEDManager::cylon()
 			// Wait a little bit before we loop around and do it again
 			QThread::msleep(10);
 		}
+		QCoreApplication::processEvents();
 	}
-	endProgram();
 }
 
 void LEDManager::snow()
 {
-	endProgram();
+    qDebug() << __PRETTY_FUNCTION__;
+    twinkles->setDensity(8);
+    twinkles->setSpeed(4);
+    while (m_allowRun) {
+        twinkles->action();
+        FastLED.show();
+    }
 }
 
 // random colored speckles that blink in and fade smoothly
 void LEDManager::confetti()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	fadeToBlackBy(m_leds, NUM_LEDS, 10);
 	int pos = random16(NUM_LEDS);
 	m_leds[pos] += CHSV(m_hue + random8(64), 200, 255);
@@ -288,6 +301,7 @@ void LEDManager::confetti()
 // a colored dot sweeping back and forth, with fading trails
 void LEDManager::sinelon()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	fadeToBlackBy(m_leds, NUM_LEDS, 20);
 	int pos = beatsin16(13,0,NUM_LEDS-1);
 	m_leds[pos] += CHSV(m_hue, 255, 192);
@@ -295,6 +309,7 @@ void LEDManager::sinelon()
 
 void LEDManager::bpm()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	// colored stripes pulsing at a defined Beats-Per-Minute (BPM)
 	uint8_t BeatsPerMinute = 62;
 	CRGBPalette16 palette = PartyColors_p;
@@ -311,6 +326,7 @@ void LEDManager::juggle()
 	byte dothue = 0;
 	fadeToBlackBy(m_leds, NUM_LEDS, 20);
 
+    qDebug() << __PRETTY_FUNCTION__;
 	for (int i = 0; i < 8; i++) {
 		m_leds[beatsin16(i+7,0,NUM_LEDS-1)] |= CHSV(dothue, 200, 255);
 		dothue += 32;
@@ -320,18 +336,21 @@ void LEDManager::juggle()
 // add one to the current pattern number, and wrap around at the end
 void LEDManager::nextPattern()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	m_CurrentPatternNumber = (m_CurrentPatternNumber + 1) % m_patterns.size();
 }
 
 // built-in FastLED rainbow, plus some random sparkly glitter
 void LEDManager::rainbowWithGlitter()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	rainbow();
 	addGlitter(80);
 }
 
 void LEDManager::addGlitter(fract8 chanceOfGlitter)
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	if (random8() < chanceOfGlitter) {
 		m_leds[random16(NUM_LEDS)] += CRGB::White;
 	}
@@ -339,11 +358,13 @@ void LEDManager::addGlitter(fract8 chanceOfGlitter)
 
 void LEDManager::rainbow()
 {
+    qDebug() << __PRETTY_FUNCTION__;
   fill_rainbow(m_leds, NUM_LEDS, m_hue, 7);
 }
 
 void LEDManager::demo()
 {
+    qDebug() << __PRETTY_FUNCTION__;
 	while (m_allowRun) {
 		emit startLedProgram();
 		// Call the current pattern function once, updating the 'leds' array
@@ -356,6 +377,6 @@ void LEDManager::demo()
 		// do some periodic updates
 		EVERY_N_MILLISECONDS( 20 ) { m_hue++; } // slowly cycle the "base color" through the rainbow
 		EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
+		QCoreApplication::processEvents();
 	}
-	endProgram();
 }

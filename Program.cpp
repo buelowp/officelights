@@ -34,7 +34,6 @@ Program::Program(QObject *parent) : QObject(parent)
 	m_hue = new HueManager();
 
 	m_huesm = new QStateMachine(this);
-	m_ledsm = new QStateMachine(this);
 
 	QState *lightsOff = new HueOffState();
 	QState *lightsOn = new HueOnState();
@@ -64,14 +63,6 @@ Program::Program(QObject *parent) : QObject(parent)
     connect(this, SIGNAL(allLightsOn()), this, SLOT(setButtonLedOn()));
     connect(this, SIGNAL(allLightsOff()), this, SLOT(setButtonLedOff()));
 
-	QState *leds_off = new QState();
-	QState *leds_on = new QState();
-
-	leds_off->addTransition(m_leds, SIGNAL(startLedProgram()), leds_on);
-	leds_on->addTransition(m_leds, SIGNAL(endLedProgram()), leds_off);
-	connect(leds_on, SIGNAL(entered()), this, SLOT(ledsOn()));
-	connect(leds_off, SIGNAL(entered()), this, SLOT(ledsOff()));
-
 	m_huesm->addState(lightsOff);
 	m_huesm->addState(lightsOn);
     m_huesm->addState(lightsInit);
@@ -81,11 +72,6 @@ Program::Program(QObject *parent) : QObject(parent)
     m_huesm->addState(lightsEventTimeout);
 	m_huesm->setInitialState(lightsInit);
 	m_huesm->start();
-
-	m_ledsm->addState(leds_off);
-	m_ledsm->addState(leds_on);
-	m_ledsm->setInitialState(leds_off);
-	m_ledsm->start();
 
 	m_nextEvent = new QTimer();
 
@@ -98,10 +84,9 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)));
 	connect(m_leds, SIGNAL(finished()), m_leds, SLOT(deleteLater()));
 	connect(m_leds, SIGNAL(programDone(int)), this, SLOT(ledProgramDone(int)));
-	connect(this, SIGNAL(endLedProgram()), m_leds, SLOT(endProgram()));
+	connect(this, SIGNAL(endLedProgram(int)), m_leds, SLOT(endProgram(int)));
 	connect(m_nextEvent, SIGNAL(timeout()), this, SLOT(runUpdateTimeout()));
     connect(m_hue, SIGNAL(newLightState(int, bool)), this, SLOT(updateLightState(int, bool)));
-//    connect(m_hue, SIGNAL(allLightsUpdated()), this, SLOT(allLightsUpdated()));
 }
 
 Program::~Program()
@@ -380,6 +365,26 @@ void Program::turnOffEvening()
 	emit turnLightsOff();
 }
 
+void Program::toggleLedProgram(int b)
+{
+    qDebug() << __PRETTY_FUNCTION__ << ": Toggling LED program" << b;
+    if (m_ledColorProgram == b) {
+        qDebug() << __PRETTY_FUNCTION__ << ": Ending old program";
+        emit endLedProgram(b);
+        m_buttons->setButtonState(b, false);
+        m_ledColorProgram = 10;
+    }
+    else {
+        qDebug() << __PRETTY_FUNCTION__ << ": Starting new program" << b;
+        if (m_ledColorProgram != 10) {
+            m_buttons->setButtonState(m_ledColorProgram, false);
+        }
+        m_ledColorProgram = b;
+        m_buttons->setButtonState(m_ledColorProgram, true);
+        emit runLedProgram(b);
+    }
+}
+
 void Program::buttonPressed(int b)
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": buttonstate for" << b << " is" << m_buttons->buttonState(0);
@@ -395,63 +400,13 @@ void Program::buttonPressed(int b)
         }
 		break;
 	case 1:
-        if (m_ledColorProgram == 1) {
-            emit endLedProgram(b);
-            m_buttons->setButtonState(b, false);
-            m_ledColorProgram = 10;
-        }
-        else {
-            if (m_ledColorProgram != 10)
-                m_buttons->setButtonState(m_ledColorProgram, false);
-            m_ledColorProgram = b;
-            m_buttons->setButtonState(m_ledColorProgram, true);
-            emit runLedProgram(b);
-        }
-        break;   
 	case 2:
-        if (m_ledColorProgram == 2) {
-            emit endLedProgram(b);
-            m_buttons->setButtonState(b, false);
-            m_ledColorProgram = 10;
-        }
-        else {
-            if (m_ledColorProgram != 10)
-                m_buttons->setButtonState(m_ledColorProgram, false);
-            m_ledColorProgram = b;
-            m_buttons->setButtonState(m_ledColorProgram, true);
-            emit runLedProgram(b);
-        }
-        break;   
 	case 3:
-        if (m_ledColorProgram == 3) {
-            emit endLedProgram(b);
-            m_buttons->setButtonState(b, false);
-            m_ledColorProgram = 10;
-        }
-        else {
-            if (m_ledColorProgram != 10)
-                m_buttons->setButtonState(m_ledColorProgram, false);
-            m_ledColorProgram = b;
-            m_buttons->setButtonState(m_ledColorProgram, true);
-            emit runLedProgram(b);
-        }
-        break;   
 	case 4:
-        if (m_ledColorProgram == 4) {
-            emit endLedProgram(b);
-            m_buttons->setButtonState(b, false);
-            m_ledColorProgram = 10;
-        }
-        else {
-            if (m_ledColorProgram != 10)
-                m_buttons->setButtonState(m_ledColorProgram, false);
-            m_ledColorProgram = b;
-            m_buttons->setButtonState(m_ledColorProgram, true);
-            emit runLedProgram(b);
-        }
+        toggleLedProgram(b);
         break;   
 	case 5:
-		emit runLedProgram(b);
+        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::green));
         m_buttons->setButtonState(b, true);
@@ -459,7 +414,7 @@ void Program::buttonPressed(int b)
         m_hueColorProgram = b;
 		break;
 	case 8:
-		emit runLedProgram(b);
+        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::yellow));
         m_buttons->setButtonState(b, true);
@@ -467,7 +422,7 @@ void Program::buttonPressed(int b)
         m_hueColorProgram = b;
 		break;
 	case 9:
-		emit runLedProgram(b);
+        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::red));
         m_hueColorProgram = b;

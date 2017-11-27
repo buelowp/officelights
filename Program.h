@@ -101,6 +101,7 @@ signals:
 private:
 	void turnOnMorning();
 	void turnOffEvening();
+    void toggleLedProgram(int);
 
 	ButtonManager *m_buttons;
 	LEDManager *m_leds;

@@ -24,7 +24,7 @@ static XKey8 *g_buttonManager;
 extern "C" {
 	unsigned int buttonEvent(unsigned char *pData, unsigned int deviceID, unsigned int error)
 	{
-        qDebug() << __PRETTY_FUNCTION__ << ": handling event for" << deviceID;
+//        qDebug() << __PRETTY_FUNCTION__ << ": handling event for device" << deviceID;
 		return g_buttonManager->handleDataEvent(pData, deviceID, error);
 	}
 	unsigned int errorEvent(unsigned int deviceID, unsigned int status)
