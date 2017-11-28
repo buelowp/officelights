@@ -19,32 +19,28 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 */
 #include "ButtonManager.h"
 
-static XKey8 *g_buttonManager;
+static XKey8 *g_buttonManagers[4];
 
 extern "C" {
 	unsigned int buttonEvent(unsigned char *pData, unsigned int deviceID, unsigned int error)
 	{
-//        qDebug() << __PRETTY_FUNCTION__ << ": handling event for device" << deviceID;
-		return g_buttonManager->handleDataEvent(pData, deviceID, error);
+        qDebug() << __PRETTY_FUNCTION__ << ": handling event for device" << deviceID;
+        if (deviceID < 3) {
+            return g_buttonManagers[deviceID]->handleDataEvent(pData, deviceID, error);
+        }
 	}
 	unsigned int errorEvent(unsigned int deviceID, unsigned int status)
 	{
-		return g_buttonManager->handleErrorEvent(deviceID, status);
+        if (deviceID < 3) {
+            return g_buttonManagers[deviceID]->handleErrorEvent(deviceID, status);
+        }
 	}
 }
 
 ButtonManager::ButtonManager(QObject *parent) : QObject(parent)
 {
-	m_buttonManager = new XKey8();
-
-	m_buttonManager->registerCallback(buttonEvent);
-	m_buttonManager->registerErrorCallback(errorEvent);
-
-	connect(m_buttonManager, SIGNAL(panelConnected()), this, SLOT(panelConnected()));
-	connect(m_buttonManager, SIGNAL(buttonUp(int)), this, SLOT(buttonUp(int)));
-
-	g_buttonManager = m_buttonManager;
-
+    m_devicesConnected = 0;
+    
 	for (int i = 0; i < 10; i++)
 		m_buttonState.push_back(false);
 }
@@ -66,6 +62,12 @@ void ButtonManager::setButtonState(int b, bool s)
 	}
 }
 
+void ButtonManager::panelConnected(int handle)
+{
+    if (--m_devicesConnected == 0)
+        emit panelReady(handle);
+}
+
 void ButtonManager::panelConnected()
 {
 	qWarning() << __PRETTY_FUNCTION__ << ": Buttons seem to be ready to use";
@@ -85,22 +87,52 @@ void ButtonManager::buttonDown(int button, unsigned int ts)
 
 void ButtonManager::buttonUp(int button)
 {
-	m_buttonManager->toggleButtonLEDState(button);
-	m_buttonState[button] = !m_buttonState[button];
+    qWarning() << __PRETTY_FUNCTION__ << ": Shouldn't be here";
+}
+
+void ButtonManager::buttonUp(int handle, int button)
+{
+    XKey8 *panel = m_buttonManagers[handle];
+    QVector<bool> buttons = m_buttonState[handle];
+    
+    if (panel)
+        panel->toggleButtonLEDState(button);
+    
+	buttons[button] = !buttons[button];
 	emit buttonPressed(button);
 }
 
 void ButtonManager::start()
 {
-	qDebug() << __PRETTY_FUNCTION__ << ": Looking for buttons";
-	m_buttonManager->queryForDevice();
+    QVector<int> devices;
+    
+    for (int i = 0; i < XKey8::queryForDevices(&devices); i++) {
+        XKey8 *strip = new XKey8(devices[i]);
+        m_buttonManagers[devices[i]] = strip;
+        connect(strip, SIGNAL(panelConnected(int)), this, SLOT(panelConnected(int)));
+        connect(strip, SIGNAL(buttonUp(int, int)), this, SLOT(buttonUp(int, int)));
+        g_buttonManagers[i] = strip;
+        strip->registerCallback(buttonEvent);
+        strip->registerErrorCallback(errorEvent);
+        m_devicesConnected++;
+    }
+
+    for (int i = 0; i < devices.size(); i++) {
+        m_buttonManagers[devices[i]]->queryForDevice();
+    }
 }
 
 void ButtonManager::turnLedsOff()
 {
-	m_buttonManager->turnButtonLedsOff();
-	for (int i = 0; i < 10; i++)
-		m_buttonState[i] = false;
+    QMapIterator<int, XKey8*> i(m_buttonManagers);
+    while (i.hasNext()) {
+        i.next();
+        i.value()->turnButtonLedsOff();
+        QVector<bool> buttons = m_buttonState[i.key()];
+        for (int i = 0; i < buttons.size(); i++) {
+            buttons[i] = false;
+        }
+    }
 }
 
 void ButtonManager::turnLedOn(int)

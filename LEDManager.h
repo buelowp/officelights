@@ -26,6 +26,7 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #include <FastLED/FastLED.h>
 
 #include "ledprogs/twinkles.h"
+#include "ledprogs/christmas.h"
 
 #define NUM_LEDS	68
 #define SPI_BUS    0
@@ -84,8 +85,11 @@ private:
 	void red();
 	void yellow();
 	void green();
+    void christmas();
 
-    Twinkles *twinkles;
+    Twinkles *m_twinkles;
+    Christmas *m_christmas;
+    
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;
 	bool m_allowRun;

@@ -43,7 +43,8 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
     m_patterns.push_back(std::bind(&LEDManager::sinelon, this));
     m_patterns.push_back(std::bind(&LEDManager::juggle, this));
     m_patterns.push_back(std::bind(&LEDManager::bpm, this));
-    twinkles = new Twinkles(m_leds, Snow_p);
+    m_twinkles = new Twinkles(m_leds, Snow_p);
+    m_christmas = new Christmas(m_leds, 68, 10);
 }
 
 LEDManager::~LEDManager()
@@ -55,7 +56,6 @@ void LEDManager::run()
 	qWarning() << __PRETTY_FUNCTION__ << ": Starting LED control thread";
 	turnLedsOff();
 	while (1) {
-        qDebug() << __PRETTY_FUNCTION__ << ": program change is" << m_programChange;
 		if (m_programChange) {
             qDebug() << __PRETTY_FUNCTION__ << ": Switching to new program" << m_currentProgram;
 			runProgram(m_currentProgram);
@@ -120,7 +120,7 @@ void LEDManager::runProgram(int p)
 		demo();
 		break;
 	case 4:
-//		christmas();
+		christmas();
 		break;
 	case 5:
 		green();
@@ -281,12 +281,17 @@ void LEDManager::cylon()
 void LEDManager::snow()
 {
     qDebug() << __PRETTY_FUNCTION__;
-    twinkles->setDensity(8);
-    twinkles->setSpeed(4);
+    m_twinkles->setDensity(8);
+    m_twinkles->setSpeed(4);
     while (m_allowRun) {
-        twinkles->action();
+        m_twinkles->action();
         FastLED.show();
     }
+}
+
+void LEDManager::christmas()
+{
+    
 }
 
 // random colored speckles that blink in and fade smoothly

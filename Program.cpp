@@ -48,6 +48,8 @@ Program::Program(QObject *parent) : QObject(parent)
     lightsSwitchToOff->addTransition(this, SIGNAL(allLightsOff()), lightsOff);
     lightsOff->addTransition(this, SIGNAL(startNextEvent()), lightsEventTimeout);
     lightsOn->addTransition(this, SIGNAL(startNextEvent()), lightsEventTimeout);
+    lightsOff->addTransition(this, SIGNAL(offProgramSwitchLightState()), lightsSwitchToOn);
+    lightsOn->addTransition(this, SIGNAL(offProgramSwitchLightState()), lightsSwitchToOff);
     lightsSwitchEvent->addTransition(this, SIGNAL(turnLightsOn()), lightsSwitchToOn);
     lightsSwitchEvent->addTransition(this, SIGNAL(turnLightsOff()), lightsSwitchToOff);
     lightsEventTimeout->addTransition(this, SIGNAL(startNextEvent()), lightsSwitchEvent);
@@ -396,7 +398,7 @@ void Program::buttonPressed(int b)
             m_hueColorProgram = 0;
         }
         else {
-            toggleLights();
+            emit offProgramSwitchLightState();
         }
 		break;
 	case 1:

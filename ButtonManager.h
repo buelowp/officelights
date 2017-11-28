@@ -40,16 +40,21 @@ public:
 public slots:
 	void buttonDown(int, unsigned int);
 	void buttonUp(int);
+    void buttonUp(int, int);
 	void panelConnected();
+    void panelConnected(int);
 	void panelDisconnected();
 
 signals:
 	void buttonPressed(int);
+    void buttonPressed(int, int);
 	void ready();
+    void panelReady(int);
 
 private:
-	XKey8 *m_buttonManager;
-	QVector<bool> m_buttonState;
+    QMap<int, XKey8*> m_buttonManagers;
+	QMap<int, QVector<bool> > m_buttonState;
+    int m_devicesConnected;
 
 };
 

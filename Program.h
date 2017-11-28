@@ -97,6 +97,7 @@ signals:
     void colorChangeComplete();
     void brightnessChangeComplete();
     void endLedProgram(int);
+    void offProgramSwitchLightState();
 
 private:
 	void turnOnMorning();
