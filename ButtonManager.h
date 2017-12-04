@@ -34,7 +34,7 @@ public:
 	void turnLedOff(int);
 	void turnLedOn(int);
 	bool buttonState(int);
-	QVector<bool> & allButtonStates() { return m_buttonState; }
+	QMap<int, bool> & allButtonStates() { return m_buttonStates; }
 	void setButtonState(int, bool);
 
 public slots:
@@ -53,7 +53,8 @@ signals:
 
 private:
     QMap<int, XKey8*> m_buttonManagers;
-	QMap<int, QVector<bool> > m_buttonState;
+	QMap<int, bool> m_buttonStates;
+    QMap<int, int> m_buttonHandles;
     int m_devicesConnected;
 
 };
