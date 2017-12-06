@@ -19,21 +19,20 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 */
 #include "ButtonManager.h"
 
-static XKey8 *g_buttonManagers[4];
+static XKey8 *g_buttonManagers;
 
 extern "C" {
 	unsigned int buttonEvent(unsigned char *pData, unsigned int deviceID, unsigned int error)
 	{
-        qDebug() << __PRETTY_FUNCTION__ << ": handling event for device" << deviceID;
-        if (deviceID < 3) {
-            return g_buttonManagers[deviceID]->handleDataEvent(pData, deviceID, error);
+        if (deviceID < 4) {
+            return g_buttonManagers->handleDataEvent(pData, deviceID, error);
         }
         return -1;
 	}
 	unsigned int errorEvent(unsigned int deviceID, unsigned int status)
 	{
-        if (deviceID < 3) {
-            return g_buttonManagers[deviceID]->handleErrorEvent(deviceID, status);
+        if (deviceID < 4) {
+            return g_buttonManagers->handleErrorEvent(deviceID, status);
         }
         return -1;
 	}
@@ -54,37 +53,31 @@ ButtonManager::~ButtonManager()
 
 void ButtonManager::setButtonState(int b, bool s)
 {
-    int index = m_buttonHandles[b];
-    int button = b % 10;
+    qDebug() << __PRETTY_FUNCTION__ << ": Setting button" << b << "led to" << s;
     
-    qDebug() << __PRETTY_FUNCTION__ << ": Acting on button" << b << "whose panel handle is" << index << "and mapped button is" << button;
-    
-    XKey8* panel = m_buttonManagers[index];
-    
-    if (panel) {
+    if (m_panel) {
         m_buttonStates[b] = s;
         if (s)
-            panel->setButtonBlueLEDState(b % 10, LEDMode::ON);
+            m_panel->setButtonBlueLEDState(b, LEDMode::ON);
         else
-            panel->setButtonBlueLEDState(b % 10, LEDMode::OFF);
+            m_panel->setButtonBlueLEDState(b, LEDMode::OFF);
     }
 }
 
-void ButtonManager::panelConnected(int handle)
+void ButtonManager::panelConnected(int handle, int count, int first)
 {
-    if (--m_devicesConnected == 0)
-        emit panelReady(handle);
-}
-
-void ButtonManager::panelConnected()
-{
-	qWarning() << __PRETTY_FUNCTION__ << ": Buttons seem to be ready to use";
-	emit ready();
+    for (int i = 0; i < count; i++) {
+        if (i == 6 || i == 7) {
+            continue;
+        }
+        
+        m_buttonHandles[first + i] = handle;
+    }
+    emit panelReady(handle, first);
 }
 
 void ButtonManager::panelDisconnected()
 {
-
 }
 
 void ButtonManager::buttonDown(int button, unsigned int ts)
@@ -101,69 +94,51 @@ void ButtonManager::buttonUp(int button)
 
 void ButtonManager::buttonUp(int handle, int button)
 {
-    int index = handle * 10;
-    XKey8 *panel = m_buttonManagers[handle];
-    
-    qDebug() << __PRETTY_FUNCTION__ << ": got a button up on panel" << handle << "for button" << button << "which translates to virtual button" << button + index;
-    
-    if (panel)
-        panel->toggleButtonLEDState(button);
+    Q_UNUSED(handle);
+    qDebug() << __PRETTY_FUNCTION__ << ": got a button event for button" << button;
+/*    
+    if (m_panel)
+        m_panel->toggleButtonLEDState(button);
 
-    m_buttonStates[button + index] = !m_buttonStates[button + index];
-	emit buttonPressed(button + index);
+    m_buttonStates[button] = !m_buttonStates[button];
+    */
+	emit buttonPressed(button);
 }
 
 void ButtonManager::start()
 {
-    std::vector<int> devices;
-    int deviceCount = XKey8::queryForDevices(&devices);
-    int button = 0;
-    
-    qDebug() << __PRETTY_FUNCTION__ << ": found" << deviceCount << "devices to query";
-    for (int i = 0; i < deviceCount; i++) {
-        XKey8 *strip = new XKey8(devices[i]);
-        m_buttonManagers[devices[i]] = strip;
-        for (int j = button; j < button + 10; j++) {
-            m_buttonHandles[j] = devices[i];
-            qDebug() << __PRETTY_FUNCTION__ << ": assigning button" << j << "to handle" << devices[i];
-        }
-        button += 10;
-        connect(strip, SIGNAL(panelConnected(int)), this, SLOT(panelConnected(int)));
-        connect(strip, SIGNAL(buttonUp(int, int)), this, SLOT(buttonUp(int, int)));
-        g_buttonManagers[i] = strip;
-        strip->registerCallback(buttonEvent);
-        strip->registerErrorCallback(errorEvent);
-        m_devicesConnected++;
-    }
-
-    for (std::vector<int>::size_type i = 0; i < devices.size(); i++) {
-        m_buttonManagers[devices[i]]->queryForDevice();
-    }
+    m_panel = new XKey8();
+    g_buttonManagers = m_panel;
+    m_panel->registerCallback(buttonEvent);
+    m_panel->registerErrorCallback(errorEvent);
+    connect(m_panel, SIGNAL(panelConnected(int, int, int)), this, SLOT(panelConnected(int, int, int)));
+    connect(m_panel, SIGNAL(buttonUp(int, int)), this, SLOT(buttonUp(int, int)));
+    m_panel->queryForDevices();
 }
 
-void ButtonManager::turnLedsOff()
+void ButtonManager::turnLedsOff(int handle)
 {
-    int offset = 0;
-    
-    for (int i = 0; i < m_buttonHandles.size(); i++) {
-        qDebug() << __PRETTY_FUNCTION__ << ": Setting leds off for device handle" << m_buttonHandles[i];
-        XKey8 *panel = m_buttonManagers[m_buttonHandles[i]];
-        if (panel) {
-            panel->turnButtonLedsOff();
-            for (int i = 0; i < 10; i++) {
-                m_buttonStates[i + offset] = false;
-            }
-            offset += 10;
+    int buttonOffset = handle * 10;
+    if (m_panel) {
+        m_panel->turnButtonLedsOff(handle);
+        for (int i = buttonOffset; i < (buttonOffset + 10); i++) {
+            m_buttonStates[i] = false;
         }
     }
 }
 
-void ButtonManager::turnLedOn(int)
+void ButtonManager::turnLedOn(int button)
 {
+    if (m_panel) {
+        m_panel->setButtonBlueLEDState(button, LEDMode::ON);
+    }
 }
 
-void ButtonManager::turnLedOff(int)
+void ButtonManager::turnLedOff(int button)
 {
+    if (m_panel) {
+        m_panel->setButtonBlueLEDState(button, LEDMode::OFF);
+    }
 }
 
 bool ButtonManager::buttonState(int b)
@@ -172,4 +147,32 @@ bool ButtonManager::buttonState(int b)
         return m_buttonStates[b];
         
     return false;
+}
+
+void ButtonManager::turnRedLedOff(int handle)
+{
+    if (m_panel) {
+        m_panel->setPanelLED(handle, PanelLED::RED_LED, LEDMode::OFF);
+    }
+}
+
+void ButtonManager::turnGreenLedOff(int handle)
+{
+    if (m_panel) {
+        m_panel->setPanelLED(handle, PanelLED::GRN_LED, LEDMode::OFF);
+    }
+}
+
+void ButtonManager::turnRedLedOn(int handle)
+{
+    if (m_panel) {
+        m_panel->setPanelLED(handle, PanelLED::RED_LED, LEDMode::ON);
+    }
+}
+
+void ButtonManager::turnGreenLedOn(int handle)
+{
+    if (m_panel) {
+        m_panel->setPanelLED(handle, PanelLED::GRN_LED, LEDMode::ON);
+    }
 }

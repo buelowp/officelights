@@ -30,9 +30,13 @@ public:
 	virtual ~ButtonManager();
 
 	void start();
-	void turnLedsOff();
+	void turnLedsOff(int);
 	void turnLedOff(int);
 	void turnLedOn(int);
+    void turnRedLedOff(int);
+    void turnGreenLedOff(int);
+    void turnRedLedOn(int);
+    void turnGreenLedOn(int);
 	bool buttonState(int);
 	QMap<int, bool> & allButtonStates() { return m_buttonStates; }
 	void setButtonState(int, bool);
@@ -41,20 +45,19 @@ public slots:
 	void buttonDown(int, unsigned int);
 	void buttonUp(int);
     void buttonUp(int, int);
-	void panelConnected();
-    void panelConnected(int);
+    void panelConnected(int, int, int);
 	void panelDisconnected();
 
 signals:
 	void buttonPressed(int);
     void buttonPressed(int, int);
 	void ready();
-    void panelReady(int);
+    void panelReady(int, int);
 
 private:
-    QMap<int, XKey8*> m_buttonManagers;
+    XKey8 *m_panel;
 	QMap<int, bool> m_buttonStates;
-    QMap<int, int> m_buttonHandles;
+    QMap<int, int> m_buttonHandles;     // Button number is key, handle is value
     int m_devicesConnected;
 
 };

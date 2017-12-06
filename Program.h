@@ -47,7 +47,7 @@ public slots:
 	void buttonPressed(int);
 	void hueBridgeFound();
 	void hueLightsFound(int);
-	void buttonsFound();
+	void buttonsFound(int, int);
 	void ledProgramDone(int);
 	void runHueAltProgram();
 	void hueIsOff();

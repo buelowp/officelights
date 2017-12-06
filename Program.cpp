@@ -80,7 +80,7 @@ Program::Program(QObject *parent) : QObject(parent)
 	connect(m_hue, SIGNAL(hueBridgeFound()), this, SLOT(hueBridgeFound()));
 	connect(m_hue, SIGNAL(hueLightsFound(int)), this, SLOT(hueLightsFound(int)));
 	connect(m_buttons, SIGNAL(buttonPressed(int)), this, SLOT(buttonPressed(int)));
-	connect(m_buttons, SIGNAL(ready()), this, SLOT(buttonsFound()));
+	connect(m_buttons, SIGNAL(panelReady(int, int)), this, SLOT(buttonsFound(int, int)));
 	connect(this, SIGNAL(turnLedsOff()), m_leds, SLOT(turnOff()));
 	connect(this, SIGNAL(runLedProgram(int)), m_leds, SLOT(setProgram(int)));
 	connect(this, SIGNAL(setLedBrightness(int)), m_leds, SLOT(setBrightness(int)));
@@ -116,7 +116,7 @@ void Program::echoLightsOn()
 
 void Program::allLightsUpdated()
 {
-//    qDebug() << __PRETTY_FUNCTION__;
+    qDebug() << __PRETTY_FUNCTION__;
     /*
     if (m_hue->allLightsAreOn()) {
         emit allLightsOn();
@@ -136,8 +136,7 @@ void Program::releaseLock()
 void Program::setColor(QColor c)
 {
     for (int i = 0; i < m_lightCount; i++) {
-//        m_blockForNotification.lock();
-        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to color" << c;
+//        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to color" << c;
         m_hue->setLightColor(i, c);
     }
     emit colorChangeComplete();
@@ -146,8 +145,7 @@ void Program::setColor(QColor c)
 void Program::setBrightness(int b)
 {
     for (int i = 0; i < m_lightCount; i++) {
-//        m_blockForNotification.lock();
-        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to brightness" << b;
+//        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to brightness" << b;
         m_hue->setBrightness(i, b);
     }
     emit brightnessChangeComplete();
@@ -332,10 +330,13 @@ void Program::hueLightsFound(int c)
     }
 }
 
-void Program::buttonsFound()
+void Program::buttonsFound(int handle, int first)
 {
+    Q_UNUSED(first)
 	qWarning() << __PRETTY_FUNCTION__;
-	m_buttons->turnLedsOff();
+	m_buttons->turnLedsOff(handle);
+    m_buttons->turnRedLedOff(handle);
+    m_buttons->turnGreenLedOff(handle);
 }
 
 void Program::ledProgramDone(int p)
@@ -402,35 +403,71 @@ void Program::buttonPressed(int b)
         }
 		break;
 	case 1:
-	case 2:
-	case 3:
-	case 4:
-        toggleLedProgram(b);
-        break;   
-	case 5:
-        toggleLedProgram(b);
+//        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::green));
+        m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
-        m_buttons->setButtonState(0, false);
+        m_hueColorProgram = b;
+		break;
+	case 2:
+//        toggleLedProgram(b);
+		emit turnLightsOn();
+		m_hue->setLightsColor(QColor(Qt::gray));
+        m_buttons->setButtonState(m_hueColorProgram, false);
+        m_buttons->setButtonState(b, true);
+        m_hueColorProgram = b;
+		break;
+	case 3:
+//        toggleLedProgram(b);
+		emit turnLightsOn();
+		m_hue->setLightsColor(QColor(Qt::blue));
+        m_buttons->setButtonState(m_hueColorProgram, false);
+        m_buttons->setButtonState(b, true);
+        m_hueColorProgram = b;
+		break;
+	case 4:
+//        toggleLedProgram(b);
+		emit turnLightsOn();
+		m_hue->setLightsColor(QColor(Qt::magenta));
+        m_buttons->setButtonState(m_hueColorProgram, false);
+        m_buttons->setButtonState(b, true);
+        m_hueColorProgram = b;
+		break;
+	case 5:
+//        toggleLedProgram(b);
+		emit turnLightsOn();
+		m_hue->setLightsColor(QColor(Qt::cyan));
+        m_buttons->setButtonState(m_hueColorProgram, false);
+        m_buttons->setButtonState(b, true);
         m_hueColorProgram = b;
 		break;
 	case 8:
-        toggleLedProgram(b);
+//        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::yellow));
+        m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
-        m_buttons->setButtonState(0, false);
         m_hueColorProgram = b;
 		break;
 	case 9:
-        toggleLedProgram(b);
+//        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::red));
-        m_hueColorProgram = b;
+        m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
-        m_buttons->setButtonState(0, false);
+        m_hueColorProgram = b;
 		break;
+    case 30:
+    case 31:
+    case 32:
+    case 33:
+    case 34:
+    case 35:
+    case 38:
+    case 39:
+        qDebug() << __PRETTY_FUNCTION__ << ": Got second panel button press for button" << b;
+        break;
 	default:
 		qWarning() << __PRETTY_FUNCTION__ << ": Invalid button value b =" << b;
 		break;
