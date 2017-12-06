@@ -266,7 +266,7 @@ void Program::runNextEvent()
 			emit turnLightsOn();
 			QDateTime next;
 			next.setDate(dt.date());
-			next.setTime(QTime(13, 01, 0));
+			next.setTime(QTime(17, 0, 1));
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
             m_nextEvent->start();
@@ -276,7 +276,7 @@ void Program::runNextEvent()
 			emit turnLightsOff();
 			QDateTime next;
 			next.setDate(dt.date().addDays(1));
-			next.setTime(QTime(6,0,0));
+			next.setTime(QTime(6,0,1));
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
@@ -288,7 +288,7 @@ void Program::runNextEvent()
 		emit turnLightsOff();
 		QDateTime next;
 		next.setDate(dt.date().addDays(8 - dt.date().dayOfWeek()));
-		next.setTime(QTime(6,0,0));
+		next.setTime(QTime(6,0,1));
         m_nextEvent->stop();
 		m_nextEvent->setInterval(dt.msecsTo(next));
         m_nextEvent->start();

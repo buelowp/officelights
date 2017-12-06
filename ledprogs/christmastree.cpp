@@ -36,6 +36,6 @@ void ChristmasTree::startup()
 void ChristmasTree::action()
 {
     EVERY_N_MILLISECONDS(250) {
-        strip[randomValue(0, 75)] = ChristmasColorWheel[randomValue(0, 6)];
+        strip[randomValue(0, 74)] = ChristmasColorWheel[randomValue(0, 6)];
     }
 }
