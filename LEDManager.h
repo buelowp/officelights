@@ -27,8 +27,9 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 
 #include "ledprogs/twinkles.h"
 #include "ledprogs/christmas.h"
+#include "ledprogs/christmastree.h"
 
-#define NUM_LEDS	68
+//#define NUM_LEDS	75
 #define SPI_BUS    0
 #define SPI_CS	   0
 
@@ -86,9 +87,13 @@ private:
 	void yellow();
 	void green();
     void christmas();
+    void blue();
+    int randomValue(int, int);
+    void christmasTree();
 
     Twinkles *m_twinkles;
     Christmas *m_christmas;
+    ChristmasTree *m_christmasTree;
     
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;

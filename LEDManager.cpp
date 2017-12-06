@@ -44,11 +44,20 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
     m_patterns.push_back(std::bind(&LEDManager::juggle, this));
     m_patterns.push_back(std::bind(&LEDManager::bpm, this));
     m_twinkles = new Twinkles(m_leds, Snow_p);
-    m_christmas = new Christmas(m_leds, 68, 10);
+    m_christmas = new Christmas(m_leds, 75, 10);
+    m_christmasTree = new ChristmasTree(m_leds);
+    
+    QDateTime dt = QDateTime::currentDateTime();
+    qsrand(dt.currentMSecsSinceEpoch());
 }
 
 LEDManager::~LEDManager()
 {
+}
+
+int LEDManager::randomValue(int low, int high)
+{
+    return qrand() % ((high - low) + 1) + low; 
 }
 
 void LEDManager::run()
@@ -98,6 +107,7 @@ void LEDManager::endProgram(int)
 	if (m_currentProgram >= 0) {
 		qWarning() << __PRETTY_FUNCTION__ << ": cleaning up program" << m_currentProgram;
 		m_allowRun = false;
+        QThread::msleep(100);
 		turnLedsOff();
 		emit programDone(m_currentProgram);
 		m_currentProgram = -1;
@@ -111,15 +121,19 @@ void LEDManager::runProgram(int p)
 
 	switch (p) {
 	case 1:
-		cylon();
+        red();
+//		cylon();
 		break;
 	case 2:
-		snow();
+        green();
+//		snow();
 		break;
 	case 3:
-		demo();
+        blue();
+//		demo();
 		break;
 	case 4:
+//        yellow();
 		christmas();
 		break;
 	case 5:
@@ -131,10 +145,34 @@ void LEDManager::runProgram(int p)
 	case 9:
 		red();
 		break;
+    case 30:
+        christmas();
+        break;
+    case 31:
+        snow();
+        break;
+    case 32:
+        christmasTree();
+        break;
+    case 33:
+        pulse();
+        break;
 	default:
 		qWarning() << __PRETTY_FUNCTION__ << ": unknown program" << p;
 		break;
 	}
+}
+
+void LEDManager::christmasTree()
+{
+    m_christmasTree->startup();
+    FastLED.show();
+    while (m_allowRun) {
+        m_christmasTree->action();
+        FastLED.show();
+        QCoreApplication::processEvents();
+    }
+    turnLedsOff();
 }
 
 void LEDManager::setBrightness(int b)
@@ -153,7 +191,8 @@ void LEDManager::red()
 		}
 		FastLED.setBrightness(200);
 		FastLED.show();
-		QThread::msleep(100);
+        QCoreApplication::processEvents();
+
 	}
 }
 
@@ -167,7 +206,7 @@ void LEDManager::yellow()
 		}
 		FastLED.setBrightness(200);
 		FastLED.show();
-		QThread::msleep(100);
+        QCoreApplication::processEvents();
 	}
 }
 
@@ -181,7 +220,21 @@ void LEDManager::green()
 		}
 		FastLED.setBrightness(200);
 		FastLED.show();
-		QThread::msleep(100);
+        QCoreApplication::processEvents();
+	}
+}
+
+void LEDManager::blue()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+	while (m_allowRun) {
+		emit startLedProgram();
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::Blue;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+        QCoreApplication::processEvents();
 	}
 }
 
@@ -286,12 +339,25 @@ void LEDManager::snow()
     while (m_allowRun) {
         m_twinkles->action();
         FastLED.show();
+		QCoreApplication::processEvents();
     }
 }
 
 void LEDManager::christmas()
 {
-    
+    qDebug() << __PRETTY_FUNCTION__;
+    m_christmas->startup();
+    m_christmas->setFirstActive(10);
+    while (m_allowRun) {
+        m_christmas->action();
+        m_christmas->seeTheRainbow();
+        if (randomValue(1, 4) == 3) {
+            m_christmas->addOne();
+        }
+        FastLED.show();
+		QCoreApplication::processEvents();
+        QThread::msleep(10);
+    }
 }
 
 // random colored speckles that blink in and fade smoothly

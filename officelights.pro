@@ -29,7 +29,8 @@ SOURCES = \
 	statemachines/HueTransitionToOnState.cpp \
 	statemachines/HueEventTimeout.cpp \
 	ledprogs/twinkles.cpp \
-	ledprogs/christmas.cpp
+	ledprogs/christmas.cpp \
+	ledprogs/christmastree.cpp
 		
 HEADERS = \
 	keystore.h \
@@ -46,5 +47,6 @@ HEADERS = \
 	statemachines/HueTransitionToOnState.h \
 	statemachines/HueEventTimeout.h \
 	ledprogs/twinkles.h \
-	ledprogs/christmas.h
+	ledprogs/christmas.h \
+	ledprogs/christmastree.h
 		

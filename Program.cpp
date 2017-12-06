@@ -231,6 +231,7 @@ void Program::turnHueLightsOff()
             }
             qDebug() << __PRETTY_FUNCTION__ << ": turn off light" << i;
             m_hue->turnLightOff(i);
+            toggleLedProgram(m_ledColorProgram);
         }
     }
     // Block one more time while we wait for the last transition to complete
@@ -405,7 +406,7 @@ void Program::buttonPressed(int b)
 	case 1:
 //        toggleLedProgram(b);
 		emit turnLightsOn();
-		m_hue->setLightsColor(QColor(Qt::green));
+		m_hue->setLightsColor(QColor(Qt::red));
         m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
         m_hueColorProgram = b;
@@ -413,7 +414,7 @@ void Program::buttonPressed(int b)
 	case 2:
 //        toggleLedProgram(b);
 		emit turnLightsOn();
-		m_hue->setLightsColor(QColor(Qt::gray));
+		m_hue->setLightsColor(QColor(Qt::green));
         m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
         m_hueColorProgram = b;
@@ -429,7 +430,7 @@ void Program::buttonPressed(int b)
 	case 4:
 //        toggleLedProgram(b);
 		emit turnLightsOn();
-		m_hue->setLightsColor(QColor(Qt::magenta));
+		m_hue->setLightsColor(QColor(Qt::yellow));
         m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
         m_hueColorProgram = b;
@@ -466,6 +467,7 @@ void Program::buttonPressed(int b)
     case 35:
     case 38:
     case 39:
+        toggleLedProgram(b);
         qDebug() << __PRETTY_FUNCTION__ << ": Got second panel button press for button" << b;
         break;
 	default:

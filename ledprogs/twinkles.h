@@ -11,7 +11,7 @@
 #include <FastLED/FastLED.h>
 #include <QtCore/QtCore>
 
-#define NUM_LEDS            68
+#define NUM_LEDS            75
 
 #define TWINKLE_SPEED 		6
 

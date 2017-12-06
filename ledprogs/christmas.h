@@ -29,7 +29,7 @@
 #define RETURN_TO_NORM      2
 
 #define NUM_XMAS_COLORS	    6
-#define NUM_LEDS            68
+#define NUM_LEDS            75
 #define NORMAL_BRIGHT       80
 #define NUM_ACTIVE          20
 
