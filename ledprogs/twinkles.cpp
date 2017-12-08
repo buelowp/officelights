@@ -11,9 +11,12 @@ Twinkles::Twinkles(CRGB *s, CRGBPalette16 pal)
 {
 	gCurrentPalette = pal;
 	gBackgroundColor = CRGB(16,14,4);
-	density = 8;
-	speed = 5;
     strip = s;
+    
+    QSettings settings(QStandardPaths::standardLocations(QStandardPaths::ConfigLocation).first() + "/officelights/officelights.conf", QSettings::IniFormat);
+    m_numLeds = settings.value("NumLeds", 75).toInt();
+    m_density = settings.value("TwinkleDensity", 8).toInt();
+    m_speed = settings.value("TwinkleSpeed", 5).toInt();
 }
 
 Twinkles::~Twinkles()
@@ -34,14 +37,14 @@ void Twinkles::setDensity(int d)
 {
     qDebug() << __PRETTY_FUNCTION__ << ": Setting particle density to" << d;
 	if (d <= 8)
-		density = d;
+		m_density = d;
 }
 
 void Twinkles::setSpeed(int s)
 {
     qDebug() << __PRETTY_FUNCTION__ << ": setting twinkle speed to" << s;
 	if (s <= 8)
-		speed = s;
+		m_speed = s;
 }
 
 //  This function loops over each pixel, calculates the
@@ -122,12 +125,12 @@ uint8_t Twinkles::attackDecayWave8( uint8_t i)
 //  should light at all during this cycle, based on the TWINKLE_DENSITY.
 CRGB Twinkles::computeOneTwinkle( uint32_t ms, uint8_t salt)
 {
-	uint16_t ticks = ms >> (8-speed);
+	uint16_t ticks = ms >> (8-m_speed);
 	uint8_t fastcycle8 = ticks;
 	uint8_t slowcycle8 = (ticks >> 8) ^ salt;
 
 	uint8_t bright = 0;
-	if( (slowcycle8 & 0x0E) < density) {
+	if( (slowcycle8 & 0x0E) < m_density) {
 		bright = attackDecayWave8(fastcycle8);
 	}
 

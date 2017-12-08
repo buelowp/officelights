@@ -347,7 +347,7 @@ void LEDManager::christmas()
 {
     qDebug() << __PRETTY_FUNCTION__;
     m_christmas->startup();
-    m_christmas->setFirstActive(10);
+    m_christmas->setFirstActive(5);
     while (m_allowRun) {
         m_christmas->action();
         m_christmas->seeTheRainbow();
@@ -356,7 +356,7 @@ void LEDManager::christmas()
         }
         FastLED.show();
 		QCoreApplication::processEvents();
-        QThread::msleep(10);
+        QThread::msleep(20);
     }
 }
 

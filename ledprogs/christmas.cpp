@@ -28,22 +28,30 @@
 #define SCALE_VAL_NORM  1
 
 static HSVHue ChristmasColorWheel[] = {
-		HUE_RED,
-		HUE_YELLOW,
-		HUE_BLUE,
-		HUE_GREEN,
-		HUE_PURPLE,
-		HUE_ORANGE,
+    HUE_RED,
+    HUE_ORANGE,
+    HUE_YELLOW,
+    HUE_GREEN,
+    HUE_AQUA,
+    HUE_BLUE,
+    HUE_PURPLE,
+    HUE_PINK
 };
 
 Christmas::Christmas(CRGB *s, int p, int a)
 {
-	totalPixels = p;
-	numActive = a;
+    Q_UNUSED(p);
+    Q_UNUSED(a);
 	index = 0;
     strip = s;
     qsrand(QTime::currentTime().msecsSinceStartOfDay());
     swap = random(2, 9);
+    
+    QSettings settings(QStandardPaths::standardLocations(QStandardPaths::ConfigLocation).first() + "/officelights/officelights.conf", QSettings::IniFormat);
+    m_numLeds = settings.value("NumLeds", 75).toInt();
+    m_numActive = settings.value("ChristmasNumActive", 10).toInt();
+    m_normalBright = settings.value("ChristmasNormalBright", 80).toInt();
+    m_numColors = sizeof(ChristmasColorWheel);
 }
 
 Christmas::~Christmas()
@@ -98,8 +106,8 @@ bool Christmas::scale_pixel_down(int i)
 bool Christmas::scale_pixel_to_normal(int i)
 {
 	CHSV pixel = pixels[i];
-	if ((pixel.v + SCALE_VAL_NORM) >= NORMAL_BRIGHT) {
-		pixel.v = NORMAL_BRIGHT;
+	if ((pixel.v + SCALE_VAL_NORM) >= m_normalBright) {
+		pixel.v = m_normalBright;
 		return true;
 	}
 
@@ -111,18 +119,23 @@ bool Christmas::scale_pixel_to_normal(int i)
 
 void Christmas::set_new_pixel_color(int i)
 {
+    int color = random(0, m_numColors);
+    
+    while (pixels[i].h == color) {
+        color = random(0, m_numColors);
+    }
 	pixels[i].v = 0;
-	pixels[i].h = ChristmasColorWheel[random(0, NUM_XMAS_COLORS)];
+	pixels[i].h = ChristmasColorWheel[color];
 	pixels[i].s = 255;
 }
 
 void Christmas::startup()
 {
-	for (int i = 0; i < totalPixels; i++) {
+	for (int i = 0; i < m_numLeds; i++) {
 		CHSV c;
-		c.h = ChristmasColorWheel[random(0, NUM_XMAS_COLORS)];
+		c.h = ChristmasColorWheel[random(0, m_numColors)];
 		c.s = 255;
-		c.v = NORMAL_BRIGHT;
+		c.v = m_normalBright;
 		pixels.push_back(c);
 	}
 	qDebug() << __PRETTY_FUNCTION__ << ": startup with" << pixels.size() << "pixels";
@@ -139,7 +152,7 @@ void Christmas::setFirstActive(int c)
 	std::pair<std::map<int,int>::iterator,bool> ret;
 
 	while (count < c) {
-		int pixel = random(0, NUM_LEDS);
+		int pixel = random(0, m_numLeds);
 		ret = pixelMap.insert(std::pair<int,int>(pixel, GOING_UP));
 		count++;
 	}
@@ -179,19 +192,19 @@ void Christmas::action()
 
 void Christmas::addOne()
 {
-	int pixel = random(0, NUM_LEDS);
+	int pixel = random(0, m_numLeds);
 	std::pair<std::map<int,int>::iterator,bool> ret;
 
-	if (pixelMap.size() < NUM_ACTIVE) {
+	if (pixelMap.size() < m_numActive) {
 		ret = pixelMap.insert(std::pair<int,int>(pixel, GOING_UP));
 	}
 }
 
 void Christmas::seeTheRainbow()
 {
-    CHSV s[NUM_LEDS];
-    for (int j = 0; j < NUM_LEDS; j++) {
+    CHSV s[m_numLeds];
+    for (int j = 0; j < m_numLeds; j++) {
         s[j] = pixels[j];
     }
-    hsv2rgb_rainbow(s, strip, NUM_LEDS);
+    hsv2rgb_rainbow(s, strip, m_numLeds);
 }

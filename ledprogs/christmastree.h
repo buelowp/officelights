@@ -18,6 +18,8 @@ private:
     int randomValue(int, int);
     
     CRGB *strip;
+    int m_delay;
+    int m_numLeds;
 };
 
 #endif

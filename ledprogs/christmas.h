@@ -29,9 +29,6 @@
 #define RETURN_TO_NORM      2
 
 #define NUM_XMAS_COLORS	    6
-#define NUM_LEDS            75
-#define NORMAL_BRIGHT       80
-#define NUM_ACTIVE          20
 
 #include <QtCore/QtCore>
 #include <FastLED/FastLED.h>
@@ -60,10 +57,13 @@ private:
   std::vector<CHSV> pixels;
   std::map<int, int> pixelMap;
   int totalPixels;
-  int numActive;
+  std::map<int,int>::size_type m_numActive;
   int index;
   int swap;
   CRGB *strip;
+  int m_numLeds;
+  int m_normalBright;
+  int m_numColors;
 };
 
 #endif

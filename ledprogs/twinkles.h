@@ -39,8 +39,9 @@ private:
 	CRGBPalette16 gCurrentPalette;
 	CRGB gBackgroundColor;
     CRGB *strip;
-	int density;
-	int speed;
+    int m_numLeds;
+    int m_density;
+    int m_speed;
 };
 
 #endif /* USER_APPLICATIONS_WINDOWLIGHTS_TWINKLES_H_ */
