@@ -68,6 +68,7 @@ public slots:
 	void setLightColor(int, QColor);
     void lightStateChanged(int, bool);
     void updateLightsCount(int);
+    void lightDataChanged(QModelIndex,QModelIndex,QVector<int>);
 
 signals:
 	void hueBridgeFound();

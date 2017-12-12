@@ -36,6 +36,13 @@ HueManager::~HueManager()
 {
 }
 
+void HueManager::lightDataChanged(QModelIndex i, QModelIndex j, QVector<int> k)
+{
+    Q_UNUSED(i)
+    Q_UNUSED(j)
+    Q_UNUSED(k)
+}
+
 void HueManager::start()
 {
 	if (m_apiKey.size()) {
@@ -50,6 +57,7 @@ void HueManager::start()
 	connect(m_Lights, SIGNAL(busyChanged()), this, SLOT(lightsBusyChanged()));
     connect(m_Lights, SIGNAL(updateLightsCount(int)), this, SLOT(updateLightsCount(int)));
 //    connect(m_Lights, SIGNAL(stateChanged(int)), this, SLOT(lightStateChanged(int)));
+    connect(m_Lights, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(lightDataChanged(QModelIndex,QModelIndex,QVector<int>)));
     connect(m_Lights, SIGNAL(lightStateUpdated(int, bool)), this, SLOT(lightStateChanged(int, bool)));
     
 	if (m_Bridge) {
@@ -72,11 +80,12 @@ void HueManager::lightStateChanged(int id, bool state)
 {
 //    qDebug() << __PRETTY_FUNCTION__ << ": state changed for " << id << "to" << state;
 //    qDebug() << __PRETTY_FUNCTION__ << ": lights array has size " << m_Lights->rowCount();
-    qDebug() << __PRETTY_FUNCTION__ << ": state count is" << m_stateCount;
+    Q_UNUSED(state)
+    qDebug() << __PRETTY_FUNCTION__ << ": got state change for light" << id << ", state count is" << m_stateCount;
 
     if (m_stateCount != 0) {
         if (id > 0) {
-            Light *light = m_Lights->get(id - 1);
+            Light *light = m_Lights->get(m_stateCount - 1);
             if (light) {
                 m_stateCount--;
                 emit newLightState(id, light->on());
