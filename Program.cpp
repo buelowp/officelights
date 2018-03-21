@@ -262,7 +262,7 @@ void Program::runNextEvent()
     if (dt.date().dayOfWeek() < 6) {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
         
-		if ((dt.time().hour() >= 6) && (dt.time().hour() < 17)) {
+		if ((dt.time().hour() >= 6) && (dt.time().hour() < 14)) {
 			emit turnLightsOn();
 			QDateTime next;
 			next.setDate(dt.date());

@@ -25,6 +25,7 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
 	m_allowRun = false;
 	m_currentProgram = -1;
 	m_programChange = false;
+    m_reverseDirection = false;
 
     try {
         // addLeds may throw an exception if the SPI interface cannot be found.
@@ -121,41 +122,49 @@ void LEDManager::runProgram(int p)
 
 	switch (p) {
 	case 1:
-        red();
-//		cylon();
+		cylon();
 		break;
 	case 2:
-        green();
-//		snow();
+		snow();
 		break;
 	case 3:
-        blue();
-//		demo();
+		demo();
 		break;
 	case 4:
-//        yellow();
 		christmas();
 		break;
 	case 5:
-		green();
+		confetti();
 		break;
 	case 8:
-		yellow();
+		Fire2012();
 		break;
 	case 9:
 		red();
 		break;
     case 30:
-        christmas();
+        red();
         break;
     case 31:
-        snow();
+        green();
         break;
     case 32:
-        christmasTree();
+        yellow();
         break;
     case 33:
-        pulse();
+        blue();
+        break;
+    case 34:
+        white();
+        break;
+    case 35:
+        orange();
+        break;
+    case 38:
+        violet();
+        break;
+    case 39:
+        aqua();
         break;
 	default:
 		qWarning() << __PRETTY_FUNCTION__ << ": unknown program" << p;
@@ -188,6 +197,66 @@ void LEDManager::red()
 		emit startLedProgram();
 		for (int i = 0; i < NUM_LEDS; i++) {
 			m_leds[i] = CRGB::Red;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+        QCoreApplication::processEvents();
+
+	}
+}
+
+void LEDManager::violet()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+	while (m_allowRun) {
+		emit startLedProgram();
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::DarkViolet;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+        QCoreApplication::processEvents();
+
+	}
+}
+
+void LEDManager::white()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+	while (m_allowRun) {
+		emit startLedProgram();
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::White;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+        QCoreApplication::processEvents();
+
+	}
+}
+
+void LEDManager::aqua()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+	while (m_allowRun) {
+		emit startLedProgram();
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::Aqua;
+		}
+		FastLED.setBrightness(200);
+		FastLED.show();
+        QCoreApplication::processEvents();
+
+	}
+}
+
+void LEDManager::orange()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+	while (m_allowRun) {
+		emit startLedProgram();
+		for (int i = 0; i < NUM_LEDS; i++) {
+			m_leds[i] = CRGB::OrangeRed;
 		}
 		FastLED.setBrightness(200);
 		FastLED.show();
@@ -277,7 +346,7 @@ void LEDManager::pulse()
 
     qDebug() << __PRETTY_FUNCTION__;
 	for (int i = 0; i < NUM_LEDS; i++) {
-		m_leds[i] = CRGB::Green;
+		m_leds[i] = CRGB::Red;
 	}
 	FastLED.setBrightness(brightness);
 	FastLED.show();
@@ -430,7 +499,7 @@ void LEDManager::addGlitter(fract8 chanceOfGlitter)
 void LEDManager::rainbow()
 {
     qDebug() << __PRETTY_FUNCTION__;
-  fill_rainbow(m_leds, NUM_LEDS, m_hue, 7);
+    fill_rainbow(m_leds, NUM_LEDS, m_hue, 7);
 }
 
 void LEDManager::demo()
@@ -450,4 +519,43 @@ void LEDManager::demo()
 		EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
 		QCoreApplication::processEvents();
 	}
+}
+
+void LEDManager::Fire2012()
+{
+    while (m_allowRun) {
+        // Array of temperature readings at each simulation cell
+        static uint8_t heat[NUM_LEDS];
+
+        // Step 1.  Cool down every cell a little
+        for( int i = 0; i < NUM_LEDS; i++) {
+            heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / NUM_LEDS) + 2));
+        }
+  
+        // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+        for( int k= NUM_LEDS - 1; k >= 2; k--) {
+            heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
+        }
+    
+        // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
+        if( random8() < SPARKING ) {
+            int y = random8(7);
+            heat[y] = qadd8( heat[y], random8(160,255) );
+        }
+
+        // Step 4.  Map from heat cells to LED colors
+        for( int j = 0; j < NUM_LEDS; j++) {
+            CRGB color = HeatColor( heat[j]);
+            int pixelnumber;
+            if ( m_reverseDirection ) {
+                pixelnumber = (NUM_LEDS-1) - j;
+            } else {
+                pixelnumber = j;
+            }
+            m_leds[pixelnumber] = color;
+        }
+        FastLED.show(); // display this frame   
+        FastLED.delay(1000 / FRAMES_PER_SECOND);
+        QCoreApplication::processEvents();
+    }
 }

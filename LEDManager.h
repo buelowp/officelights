@@ -37,6 +37,8 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #define COLOR_ORDER 		GRB
 #define BRIGHTNESS          96
 #define FRAMES_PER_SECOND 	120
+#define SPARKING            120
+#define COOLING             55
 
 const TProgmemRGBPalette16 Snow_p =
 {  0x404040, 0x404040, 0x404040, 0x404040,
@@ -88,8 +90,13 @@ private:
 	void green();
     void christmas();
     void blue();
+    void violet();
+    void white();
+    void orange();
+    void aqua();
     int randomValue(int, int);
     void christmasTree();
+    void Fire2012();
 
     Twinkles *m_twinkles;
     Christmas *m_christmas;
@@ -100,6 +107,7 @@ private:
 	bool m_allowRun;
 	bool m_programChange;
 	int m_currentProgram;
+    bool m_reverseDirection;
 
 	uint8_t m_CurrentPatternNumber = 0; // Index number of which pattern is current
 	uint8_t m_hue = 0; 					// rotating "base color" used by many of the patterns
