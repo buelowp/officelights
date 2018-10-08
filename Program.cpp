@@ -195,19 +195,15 @@ void Program::setButtonLedOn()
  */
 void Program::turnHueLightsOn()
 {
+    qDebug() << __PRETTY_FUNCTION__;
     for (int i = 0; i < m_lightCount; i++) {
-        if (!m_hue->getLightState(i)) {
-            while (!m_blockForNotification.tryLock()) {
-                QCoreApplication::processEvents();
-            }
-            qDebug() << __PRETTY_FUNCTION__ << ": turning on light" << i;
-            m_hue->turnLightOn(i);
-        }
+        m_hue->turnLightOn(i);
     }
     // Block one more time while we wait for the last transition to complete
     while (!m_blockForNotification.tryLock()) {
         QCoreApplication::processEvents();
     }
+    m_blockForNotification.unlock();
     setBrightness(254);
     setColor(QColor(Qt::white));
     emit allLightsOn();
@@ -225,19 +221,15 @@ void Program::turnHueLightsOff()
 {
     qDebug() << __PRETTY_FUNCTION__;
     for (int i = 0; i < m_lightCount; i++) {
-        if (m_hue->getLightState(i)) {
-            while (!m_blockForNotification.tryLock()) {
-                QCoreApplication::processEvents();
-            }
-            qDebug() << __PRETTY_FUNCTION__ << ": turn off light" << i;
-            m_hue->turnLightOff(i);
-            toggleLedProgram(m_ledColorProgram);
-        }
+        m_hue->turnLightOff(i);
+        toggleLedProgram(m_ledColorProgram);
     }
     // Block one more time while we wait for the last transition to complete
     while (!m_blockForNotification.tryLock()) {
         QCoreApplication::processEvents();
-    }    
+    }
+
+    m_blockForNotification.unlock();
     emit allLightsOff();
 }
 
@@ -251,6 +243,8 @@ void Program::runNextEvent()
 {
 	QDateTime dt = QDateTime::currentDateTime();
 
+    qDebug() << __PRETTY_FUNCTION__ << ": New Event";
+    
     if (dt.date().dayOfWeek() < 6) {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
         QTime turnOn = QTime(7, 0, 0);
@@ -258,16 +252,18 @@ void Program::runNextEvent()
 
         if ((dt.time() >= turnOn) && (dt.time() <= turnOff)) {
 			emit turnLightsOn();
+            m_buttons->turnLedOn(0);
 			QDateTime next;
 			next.setDate(dt.date());
 			next.setTime(turnOff);
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
             m_nextEvent->start();
-			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn off on" << next.addMSecs(1000);
+			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn off at" << next.addMSecs(1000);
 		}
 		else {
 			emit turnLightsOff();
+            m_buttons->turnLedsOff(0);
 			QDateTime next;
             if (dt.date().dayOfWeek() == 5) {
                 next.setDate(dt.date().addDays(3));
@@ -279,19 +275,20 @@ void Program::runNextEvent()
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
             m_nextEvent->start();
- 			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn off on" << next.addMSecs(1000);
+ 			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn on at" << next.addMSecs(1000);
 		}
 	}
 	else {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekend, adding" << 8 - dt.date().dayOfWeek() << "days";
 		emit turnLightsOff();
+        m_buttons->turnLedsOff(0);
 		QDateTime next;
 		next.setDate(dt.date().addDays(8 - dt.date().dayOfWeek()));
 		next.setTime(QTime(6,0,0));
         m_nextEvent->stop();
 		m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
         m_nextEvent->start();
-		qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn off on" << next.addMSecs(1000);
+		qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn on at" << next.addMSecs(1000);
 	}
 }
 
@@ -394,16 +391,13 @@ void Program::buttonPressed(int b)
 	switch (b) {
 	case 0:
         if (m_hueColorProgram != 0) {
-            m_hue->setLightsColor(QColor(Qt::white));
-            m_buttons->setButtonState(m_hueColorProgram, false);
-            m_hueColorProgram = b;
+            runNextEvent();
         }
         else {
             emit offProgramSwitchLightState();
         }
 		break;
 	case 1:
-//        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::red));
         m_buttons->setButtonState(m_hueColorProgram, false);
@@ -411,7 +405,6 @@ void Program::buttonPressed(int b)
         m_hueColorProgram = b;
 		break;
 	case 2:
-//        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::green));
         m_buttons->setButtonState(m_hueColorProgram, false);
@@ -419,7 +412,6 @@ void Program::buttonPressed(int b)
         m_hueColorProgram = b;
 		break;
 	case 3:
-//        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::blue));
         m_buttons->setButtonState(m_hueColorProgram, false);
@@ -427,15 +419,13 @@ void Program::buttonPressed(int b)
         m_hueColorProgram = b;
 		break;
 	case 4:
-//        toggleLedProgram(b);
 		emit turnLightsOn();
-		m_hue->setLightsColor(QColor(Qt::yellow));
+		m_hue->setLightsColor(QColor(Qt::magenta));
         m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
         m_hueColorProgram = b;
 		break;
 	case 5:
-//        toggleLedProgram(b);
 		emit turnLightsOn();
 		m_hue->setLightsColor(QColor(Qt::cyan));
         m_buttons->setButtonState(m_hueColorProgram, false);
@@ -443,17 +433,15 @@ void Program::buttonPressed(int b)
         m_hueColorProgram = b;
 		break;
 	case 8:
-//        toggleLedProgram(b);
 		emit turnLightsOn();
-		m_hue->setLightsColor(QColor(Qt::yellow));
+		m_hue->setLightsColor(QColor(0xff, 0x14, 0x93, 0x00));
         m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
         m_hueColorProgram = b;
 		break;
 	case 9:
-//        toggleLedProgram(b);
 		emit turnLightsOn();
-		m_hue->setLightsColor(QColor(Qt::red));
+		m_hue->setLightsColor(QColor(0xff, 0x8c, 0x00, 0x00));
         m_buttons->setButtonState(m_hueColorProgram, false);
         m_buttons->setButtonState(b, true);
         m_hueColorProgram = b;

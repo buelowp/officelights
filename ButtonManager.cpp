@@ -24,6 +24,9 @@ static XKey8 *g_buttonManagers;
 extern "C" {
 	unsigned int buttonEvent(unsigned char *pData, unsigned int deviceID, unsigned int error)
 	{
+        if (pData == NULL)
+            return -1;
+
         if (deviceID < 4) {
             return g_buttonManagers->handleDataEvent(pData, deviceID, error);
         }
@@ -96,12 +99,6 @@ void ButtonManager::buttonUp(int handle, int button)
 {
     Q_UNUSED(handle);
     qDebug() << __PRETTY_FUNCTION__ << ": got a button event for button" << button;
-/*    
-    if (m_panel)
-        m_panel->toggleButtonLEDState(button);
-
-    m_buttonStates[button] = !m_buttonStates[button];
-    */
 	emit buttonPressed(button);
 }
 
@@ -119,6 +116,7 @@ void ButtonManager::start()
 void ButtonManager::turnLedsOff(int handle)
 {
     int buttonOffset = handle * 10;
+    qDebug() << __PRETTY_FUNCTION__ << ": turning all LEDS off for device" << handle;
     if (m_panel) {
         m_panel->turnButtonLedsOff(handle);
         for (int i = buttonOffset; i < (buttonOffset + 10); i++) {
@@ -129,6 +127,8 @@ void ButtonManager::turnLedsOff(int handle)
 
 void ButtonManager::turnLedOn(int button)
 {
+    qDebug() << __PRETTY_FUNCTION__ << ": turning on button" << button;
+
     if (m_panel) {
         m_panel->setButtonBlueLEDState(button, LEDMode::ON);
     }
@@ -136,6 +136,8 @@ void ButtonManager::turnLedOn(int button)
 
 void ButtonManager::turnLedOff(int button)
 {
+    qDebug() << __PRETTY_FUNCTION__ << ": turning off button" << button;
+
     if (m_panel) {
         m_panel->setButtonBlueLEDState(button, LEDMode::OFF);
     }
