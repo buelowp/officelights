@@ -28,6 +28,9 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #include "ledprogs/twinkles.h"
 #include "ledprogs/christmas.h"
 #include "ledprogs/christmastree.h"
+#include "ledprogs/breathing.h"
+#include "ledprogs/discostrobe.h"
+#include "ledprogs/halloween.h"
 
 //#define NUM_LEDS	75
 #define SPI_BUS    0
@@ -40,12 +43,26 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #define SPARKING            120
 #define COOLING             55
 
+#define PURP 0x6611FF
+#define ORAN 0xFF4000
+#define GREN 0x00FF11
+#define WHIT 0xCCCCCC
+#define BLU 0x0000FF
+
 const TProgmemRGBPalette16 Snow_p =
 {  0x404040, 0x404040, 0x404040, 0x404040,
    0x404040, 0x404040, 0x404040, 0x404040,
    0x404040, 0x404040, 0x404040, 0x404040,
    0x404040, 0x404040, 0x404040, 0xFFFFFF
 };
+
+const CRGBPalette16 HalloweenColors_p
+( 
+  PURP, PURP, PURP, PURP,
+  ORAN, ORAN, ORAN, ORAN,
+  BLU, BLU, BLU, BLU,
+  GREN, GREN, GREN, WHIT
+);
 
 class LEDManager : public QThread {
 	Q_OBJECT
@@ -97,10 +114,18 @@ private:
     int randomValue(int, int);
     void christmasTree();
     void Fire2012();
-
+    void halloweenBreathing();
+    void discostrobe();
+    void halloweenTwinkles();
+    void halloween();
+    
     Twinkles *m_twinkles;
     Christmas *m_christmas;
     ChristmasTree *m_christmasTree;
+    Breathing *m_breathing;
+    DiscoStrobe *m_strobe;
+    Twinkles *m_halloweenTwinkles;
+    Halloween *m_halloween;
     
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;

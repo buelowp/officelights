@@ -9,7 +9,7 @@ DESTDIR = bin
 OBJECTS_DIR = .obj
 MOC_DIR = .moc
 
-LIBS += -lhue -lxkey8 -lfastled -lpiehid -lssd1306
+LIBS += -lhue -lxkey8 -lfastled -lpiehid -lssd1306 
 
 INCLUDEPATH = /usr/include/FastLED statemachines
 
@@ -30,7 +30,10 @@ SOURCES = \
 	statemachines/HueEventTimeout.cpp \
 	ledprogs/twinkles.cpp \
 	ledprogs/christmas.cpp \
-	ledprogs/christmastree.cpp
+	ledprogs/christmastree.cpp \
+	ledprogs/breathing.cpp \
+	ledprogs/discostrobe.cpp \
+	ledprogs/halloween.cpp
 		
 HEADERS = \
 	keystore.h \
@@ -48,5 +51,8 @@ HEADERS = \
 	statemachines/HueEventTimeout.h \
 	ledprogs/twinkles.h \
 	ledprogs/christmas.h \
-	ledprogs/christmastree.h
+	ledprogs/christmastree.h \
+	ledprogs/breathing.h \
+	ledprogs/discostrobe.h \
+	ledprogs/halloween.h
 		

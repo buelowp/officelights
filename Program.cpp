@@ -60,10 +60,7 @@ Program::Program(QObject *parent) : QObject(parent)
     connect(lightsEventTimeout, SIGNAL(entered()), this, SLOT(runUpdateTimeout()));
     connect(lightsOn, SIGNAL(entered()), this, SLOT(releaseLock()));
     connect(lightsOff, SIGNAL(entered()), this, SLOT(releaseLock()));
-    
 	connect(this, SIGNAL(lightPowerButtonPressed()), this, SLOT(toggleLights()));
-    connect(this, SIGNAL(allLightsOn()), this, SLOT(setButtonLedOn()));
-    connect(this, SIGNAL(allLightsOff()), this, SLOT(setButtonLedOff()));
 
 	m_huesm->addState(lightsOff);
 	m_huesm->addState(lightsOn);
@@ -117,14 +114,6 @@ void Program::echoLightsOn()
 void Program::allLightsUpdated()
 {
     qDebug() << __PRETTY_FUNCTION__;
-    /*
-    if (m_hue->allLightsAreOn()) {
-        emit allLightsOn();
-    }
-    if (m_hue->allLightsAreOff()) {
-        emit allLightsOff();
-    }
-    */
 }
 
 void Program::releaseLock()
@@ -136,7 +125,6 @@ void Program::releaseLock()
 void Program::setColor(QColor c)
 {
     for (int i = 0; i < m_lightCount; i++) {
-//        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to color" << c;
         m_hue->setLightColor(i, c);
     }
     emit colorChangeComplete();
@@ -145,7 +133,6 @@ void Program::setColor(QColor c)
 void Program::setBrightness(int b)
 {
     for (int i = 0; i < m_lightCount; i++) {
-//        qDebug() << __PRETTY_FUNCTION__ << ": Setting light" << i << "to brightness" << b;
         m_hue->setBrightness(i, b);
     }
     emit brightnessChangeComplete();
@@ -201,11 +188,10 @@ void Program::turnHueLightsOn()
     }
     // Block one more time while we wait for the last transition to complete
     while (!m_blockForNotification.tryLock()) {
+        qDebug() << __PRETTY_FUNCTION__ << ": mutex is locked";
         QCoreApplication::processEvents();
     }
     m_blockForNotification.unlock();
-    setBrightness(254);
-    setColor(QColor(Qt::white));
     emit allLightsOn();
 }
 
@@ -252,43 +238,33 @@ void Program::runNextEvent()
 
         if ((dt.time() >= turnOn) && (dt.time() <= turnOff)) {
 			emit turnLightsOn();
-            m_buttons->turnLedOn(0);
-			QDateTime next;
-			next.setDate(dt.date());
-			next.setTime(turnOff);
+            m_buttons->setButtonState(0, true);
+            m_hue->setBrightness(254);
+            m_hue->setLightsColor(QColor(Qt::white));
+			QDateTime next(dt.date(), turnOff);
             m_nextEvent->stop();
-			m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
+			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
-			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn off at" << next.addMSecs(1000);
+			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn off at" << next;
 		}
 		else {
 			emit turnLightsOff();
             m_buttons->turnLedsOff(0);
-			QDateTime next;
-            if (dt.date().dayOfWeek() == 5) {
-                next.setDate(dt.date().addDays(3));
-            }
-            else {
-                next.setDate(dt.date().addDays(1));
-            }
-			next.setTime(QTime(6,0,0));
+			QDateTime next(dt.date().addDays(1), QTime(6,0,1));
             m_nextEvent->stop();
-			m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
+			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
- 			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn on at" << next.addMSecs(1000);
+ 			qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn on at" << next;
 		}
 	}
 	else {
-        qDebug() << __PRETTY_FUNCTION__ << ": it's a weekend, adding" << 8 - dt.date().dayOfWeek() << "days";
-		emit turnLightsOff();
-        m_buttons->turnLedsOff(0);
-		QDateTime next;
-		next.setDate(dt.date().addDays(8 - dt.date().dayOfWeek()));
-		next.setTime(QTime(6,0,0));
-        m_nextEvent->stop();
-		m_nextEvent->setInterval(dt.msecsTo(next) + 1000);
-        m_nextEvent->start();
-		qDebug() << __PRETTY_FUNCTION__ << ": Lights will turn on at" << next.addMSecs(1000);
+			emit turnLightsOff();
+            m_buttons->turnLedsOff(0);
+			QDateTime next(dt.date().addDays(1), QTime(6,0,1));
+            m_nextEvent->stop();
+			m_nextEvent->setInterval(dt.msecsTo(next));
+            m_nextEvent->start();
+ 			qDebug() << __PRETTY_FUNCTION__ << ": Weekend, will try again at" << next;
 	}
 }
 
@@ -390,7 +366,9 @@ void Program::buttonPressed(int b)
 	qWarning() << __PRETTY_FUNCTION__ << ": buttonstate for" << b << " is" << m_buttons->buttonState(0);
 	switch (b) {
 	case 0:
+        m_buttons->setButtonState(m_hueColorProgram, false);
         if (m_hueColorProgram != 0) {
+            m_hueColorProgram = 0;
             runNextEvent();
         }
         else {

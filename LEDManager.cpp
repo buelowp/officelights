@@ -45,8 +45,12 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
     m_patterns.push_back(std::bind(&LEDManager::juggle, this));
     m_patterns.push_back(std::bind(&LEDManager::bpm, this));
     m_twinkles = new Twinkles(m_leds, Snow_p);
-    m_christmas = new Christmas(m_leds, 75, 10);
+    m_christmas = new Christmas(m_leds, 55, 10);
     m_christmasTree = new ChristmasTree(m_leds);
+    m_breathing = new Breathing(m_leds, HalloweenColors_p);
+    m_strobe = new DiscoStrobe(m_leds, HalloweenColors_p);
+    m_halloweenTwinkles = new Twinkles(m_leds, HalloweenColors_p);
+    m_halloween = new Halloween(m_leds, 55, 10);
     
     QDateTime dt = QDateTime::currentDateTime();
     qsrand(dt.currentMSecsSinceEpoch());
@@ -143,16 +147,16 @@ void LEDManager::runProgram(int p)
 		red();
 		break;
     case 30:
-        red();
+        halloweenBreathing();
         break;
     case 31:
-        green();
+        discostrobe();
         break;
     case 32:
-        yellow();
+        halloweenTwinkles();
         break;
     case 33:
-        blue();
+        halloween();
         break;
     case 34:
         white();
@@ -170,6 +174,18 @@ void LEDManager::runProgram(int p)
 		qWarning() << __PRETTY_FUNCTION__ << ": unknown program" << p;
 		break;
 	}
+}
+
+void LEDManager::discostrobe()
+{
+    m_strobe->startup();
+    FastLED.show();
+    while (m_allowRun) {
+        m_strobe->action();
+        FastLED.show();
+        QCoreApplication::processEvents();
+    }
+    turnLedsOff();
 }
 
 void LEDManager::christmasTree()
@@ -400,6 +416,16 @@ void LEDManager::cylon()
 	}
 }
 
+void LEDManager::halloweenBreathing()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    m_breathing->startup();
+    while (m_allowRun) {
+        m_breathing->action();
+		QCoreApplication::processEvents();
+    }
+}
+
 void LEDManager::snow()
 {
     qDebug() << __PRETTY_FUNCTION__;
@@ -407,6 +433,21 @@ void LEDManager::snow()
     m_twinkles->setSpeed(4);
     while (m_allowRun) {
         m_twinkles->action();
+        FastLED.show();
+		QCoreApplication::processEvents();
+    }
+}
+
+void LEDManager::halloweenTwinkles()
+{
+    CRGB background(20, 5, 30);
+
+    qDebug() << __PRETTY_FUNCTION__;
+    m_halloweenTwinkles->setDensity(8);
+    m_halloweenTwinkles->setSpeed(4);
+    m_halloweenTwinkles->setBackgroundColor(background);
+    while (m_allowRun) {
+        m_halloweenTwinkles->action();
         FastLED.show();
 		QCoreApplication::processEvents();
     }
@@ -428,6 +469,24 @@ void LEDManager::christmas()
         QThread::msleep(20);
     }
 }
+
+void LEDManager::halloween()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    m_halloween->startup();
+    m_halloween->setFirstActive(5);
+    while (m_allowRun) {
+        m_halloween->action();
+        m_halloween->seeTheRainbow();
+        if (randomValue(1, 4) == 3) {
+            m_halloween->addOne();
+        }
+        FastLED.show();
+		QCoreApplication::processEvents();
+        QThread::msleep(20);
+    }
+}
+
 
 // random colored speckles that blink in and fade smoothly
 void LEDManager::confetti()
