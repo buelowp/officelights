@@ -31,6 +31,7 @@ along with officelights. If not, see <http://www.gnu.org/licenses/>.
 #include "ledprogs/breathing.h"
 #include "ledprogs/discostrobe.h"
 #include "ledprogs/halloween.h"
+#include "ledprogs/theaterchase.h"
 
 //#define NUM_LEDS	75
 #define SPI_BUS    0
@@ -118,6 +119,7 @@ private:
     void discostrobe();
     void halloweenTwinkles();
     void halloween();
+    void theaterChase();
     
     Twinkles *m_twinkles;
     Christmas *m_christmas;
@@ -126,6 +128,7 @@ private:
     DiscoStrobe *m_strobe;
     Twinkles *m_halloweenTwinkles;
     Halloween *m_halloween;
+    TheaterChase *m_theaterChase;
     
 	CRGB m_leds[NUM_LEDS];
 	bool m_enabled;

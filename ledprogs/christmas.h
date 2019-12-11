@@ -28,12 +28,11 @@
 #define GOING_DOWN          1
 #define RETURN_TO_NORM      2
 
-#define NUM_XMAS_COLORS	    6
-
 #include <QtCore/QtCore>
 #include <FastLED/FastLED.h>
 #include <map>
 #include <vector>
+#include <experimental/random>
 
 class Christmas {
 public:

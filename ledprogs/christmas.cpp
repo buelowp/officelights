@@ -51,7 +51,7 @@ Christmas::Christmas(CRGB *s, int p, int a)
     m_numLeds = settings.value("NumLeds", 75).toInt();
     m_numActive = settings.value("ChristmasNumActive", 10).toInt();
     m_normalBright = settings.value("ChristmasNormalBright", 80).toInt();
-    m_numColors = sizeof(ChristmasColorWheel);
+    m_numColors = sizeof(ChristmasColorWheel) / sizeof(HSVHue);
 }
 
 Christmas::~Christmas()
@@ -119,13 +119,14 @@ bool Christmas::scale_pixel_to_normal(int i)
 
 void Christmas::set_new_pixel_color(int i)
 {
-    int color = random(0, m_numColors);
+    HSVHue color = ChristmasColorWheel[std::experimental::randint(0, m_numColors - 1)];
     
     while (pixels[i].h == color) {
-        color = random(0, m_numColors);
+        color = ChristmasColorWheel[std::experimental::randint(0, m_numColors - 1)];
     }
+
 	pixels[i].v = 0;
-	pixels[i].h = ChristmasColorWheel[color];
+	pixels[i].h = color;
 	pixels[i].s = 255;
 }
 
@@ -133,7 +134,7 @@ void Christmas::startup()
 {
 	for (int i = 0; i < m_numLeds; i++) {
 		CHSV c;
-		c.h = ChristmasColorWheel[random(0, m_numColors)];
+		c.h = ChristmasColorWheel[std::experimental::randint(0, m_numColors - 1)];
 		c.s = 255;
 		c.v = m_normalBright;
 		pixels.push_back(c);

@@ -27,9 +27,9 @@
 #define SCALE_SAT       2
 #define SCALE_VAL_NORM  1
 
-static HSVHue ColorWheel[] = {
-    HUE_ORANGE,
+static HSVHue g_HalloweenColorWheel[] = {
     HUE_GREEN,
+    HUE_ORANGE,
     HUE_BLUE,
     HUE_PURPLE,
 };
@@ -47,7 +47,7 @@ Halloween::Halloween(CRGB *s, int p, int a)
     m_numLeds = settings.value("NumLeds", 75).toInt();
     m_numActive = settings.value("ChristmasNumActive", 10).toInt();
     m_normalBright = settings.value("ChristmasNormalBright", 80).toInt();
-    m_numColors = sizeof(ColorWheel);
+    m_numColors = sizeof(g_HalloweenColorWheel) / sizeof(HSVHue);
 }
 
 Halloween::~Halloween()
@@ -115,13 +115,14 @@ bool Halloween::scale_pixel_to_normal(int i)
 
 void Halloween::set_new_pixel_color(int i)
 {
-    int color = random(0, m_numColors);
+    HSVHue color = g_HalloweenColorWheel[std::experimental::randint(0, m_numColors - 1)];
     
     while (pixels[i].h == color) {
-        color = random(0, m_numColors);
+        color = g_HalloweenColorWheel[std::experimental::randint(0, m_numColors - 1)];
     }
+
 	pixels[i].v = 0;
-	pixels[i].h = ColorWheel[color];
+	pixels[i].h = color;
 	pixels[i].s = 255;
 }
 
@@ -129,7 +130,7 @@ void Halloween::startup()
 {
 	for (int i = 0; i < m_numLeds; i++) {
 		CHSV c;
-		c.h = ColorWheel[random(0, m_numColors)];
+		c.h = g_HalloweenColorWheel[std::experimental::randint(0, m_numColors - 1)];
 		c.s = 255;
 		c.v = m_normalBright;
 		pixels.push_back(c);

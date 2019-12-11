@@ -8,8 +8,9 @@
 #ifndef USER_APPLICATIONS_WINDOWLIGHTS_BREATHING_H_
 #define USER_APPLICATIONS_WINDOWLIGHTS_BREATHING_H_
 
-#include <FastLED/FastLED.h>
 #include <QtCore/QtCore>
+#include <FastLED/FastLED.h>
+#include <experimental/random>
 
 class Breathing {
 public:
@@ -23,7 +24,9 @@ public:
 private:
     CRGB *strip;
     CRGBPalette16 m_CurrentPalette;
+    HSVHue m_currentHue;
     int m_numLeds;
+    int m_numColors;
     int m_x;
 };
 

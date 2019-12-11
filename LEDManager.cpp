@@ -51,6 +51,7 @@ LEDManager::LEDManager(QObject *parent) : QThread(parent)
     m_strobe = new DiscoStrobe(m_leds, HalloweenColors_p);
     m_halloweenTwinkles = new Twinkles(m_leds, HalloweenColors_p);
     m_halloween = new Halloween(m_leds, 55, 10);
+    m_theaterChase = new TheaterChase(m_leds, 55, TC_THANKSGIVING);
     
     QDateTime dt = QDateTime::currentDateTime();
     qsrand(dt.currentMSecsSinceEpoch());
@@ -129,13 +130,11 @@ void LEDManager::runProgram(int p)
 		cylon();
 		break;
 	case 2:
-		snow();
 		break;
 	case 3:
 		demo();
 		break;
 	case 4:
-		christmas();
 		break;
 	case 5:
 		confetti();
@@ -147,10 +146,10 @@ void LEDManager::runProgram(int p)
 		red();
 		break;
     case 30:
-        halloweenBreathing();
+        snow();
         break;
     case 31:
-        discostrobe();
+        christmas();
         break;
     case 32:
         halloweenTwinkles();
@@ -159,7 +158,7 @@ void LEDManager::runProgram(int p)
         halloween();
         break;
     case 34:
-        white();
+        theaterChase();
         break;
     case 35:
         orange();
@@ -170,10 +169,10 @@ void LEDManager::runProgram(int p)
     case 39:
         aqua();
         break;
-	default:
-		qWarning() << __PRETTY_FUNCTION__ << ": unknown program" << p;
-		break;
-	}
+    default:
+	qWarning() << __PRETTY_FUNCTION__ << ": unknown program" << p;
+	break;
+    }
 }
 
 void LEDManager::discostrobe()
@@ -183,6 +182,17 @@ void LEDManager::discostrobe()
     while (m_allowRun) {
         m_strobe->action();
         FastLED.show();
+        QCoreApplication::processEvents();
+    }
+    turnLedsOff();
+}
+
+void LEDManager::theaterChase()
+{
+    while (m_allowRun) {
+        m_theaterChase->action();
+        FastLED.show();
+        QThread::msleep(150);
         QCoreApplication::processEvents();
     }
     turnLedsOff();
@@ -219,6 +229,7 @@ void LEDManager::red()
         QCoreApplication::processEvents();
 
 	}
+    turnLedsOff();
 }
 
 void LEDManager::violet()
@@ -234,6 +245,7 @@ void LEDManager::violet()
         QCoreApplication::processEvents();
 
 	}
+    turnLedsOff();
 }
 
 void LEDManager::white()
@@ -249,6 +261,7 @@ void LEDManager::white()
         QCoreApplication::processEvents();
 
 	}
+    turnLedsOff();
 }
 
 void LEDManager::aqua()
@@ -264,6 +277,7 @@ void LEDManager::aqua()
         QCoreApplication::processEvents();
 
 	}
+    turnLedsOff();
 }
 
 void LEDManager::orange()
@@ -279,6 +293,7 @@ void LEDManager::orange()
         QCoreApplication::processEvents();
 
 	}
+    turnLedsOff();
 }
 
 void LEDManager::yellow()
@@ -293,6 +308,7 @@ void LEDManager::yellow()
 		FastLED.show();
         QCoreApplication::processEvents();
 	}
+    turnLedsOff();
 }
 
 void LEDManager::green()
@@ -307,6 +323,7 @@ void LEDManager::green()
 		FastLED.show();
         QCoreApplication::processEvents();
 	}
+    turnLedsOff();
 }
 
 void LEDManager::blue()
@@ -321,6 +338,7 @@ void LEDManager::blue()
 		FastLED.show();
         QCoreApplication::processEvents();
 	}
+    turnLedsOff();
 }
 
 void LEDManager::setRGB(int r, int g, int b)
@@ -379,6 +397,7 @@ void LEDManager::pulse()
 		FastLED.show();
 		QCoreApplication::processEvents();
 	}
+    turnLedsOff();
 }
 
 void LEDManager::cylon()
@@ -414,6 +433,7 @@ void LEDManager::cylon()
 		}
 		QCoreApplication::processEvents();
 	}
+    turnLedsOff();
 }
 
 void LEDManager::halloweenBreathing()
@@ -424,6 +444,7 @@ void LEDManager::halloweenBreathing()
         m_breathing->action();
 		QCoreApplication::processEvents();
     }
+    turnLedsOff();
 }
 
 void LEDManager::snow()
@@ -436,6 +457,7 @@ void LEDManager::snow()
         FastLED.show();
 		QCoreApplication::processEvents();
     }
+    turnLedsOff();
 }
 
 void LEDManager::halloweenTwinkles()
@@ -451,6 +473,7 @@ void LEDManager::halloweenTwinkles()
         FastLED.show();
 		QCoreApplication::processEvents();
     }
+    turnLedsOff();
 }
 
 void LEDManager::christmas()
@@ -468,6 +491,7 @@ void LEDManager::christmas()
 		QCoreApplication::processEvents();
         QThread::msleep(20);
     }
+    turnLedsOff();
 }
 
 void LEDManager::halloween()
@@ -485,6 +509,7 @@ void LEDManager::halloween()
 		QCoreApplication::processEvents();
         QThread::msleep(20);
     }
+    turnLedsOff();
 }
 
 
@@ -578,6 +603,7 @@ void LEDManager::demo()
 		EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
 		QCoreApplication::processEvents();
 	}
+    turnLedsOff();
 }
 
 void LEDManager::Fire2012()
@@ -617,4 +643,5 @@ void LEDManager::Fire2012()
         FastLED.delay(1000 / FRAMES_PER_SECOND);
         QCoreApplication::processEvents();
     }
+    turnLedsOff();
 }

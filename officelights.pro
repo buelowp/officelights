@@ -3,7 +3,7 @@ TARGET = officelights
 CONFIG += qt debug
 QT += network core
 
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS += -std=c++1y
 
 DESTDIR = bin
 OBJECTS_DIR = .obj
@@ -33,7 +33,8 @@ SOURCES = \
 	ledprogs/christmastree.cpp \
 	ledprogs/breathing.cpp \
 	ledprogs/discostrobe.cpp \
-	ledprogs/halloween.cpp
+	ledprogs/halloween.cpp \
+	ledprogs/theaterchase.cpp
 		
 HEADERS = \
 	keystore.h \
@@ -54,5 +55,6 @@ HEADERS = \
 	ledprogs/christmastree.h \
 	ledprogs/breathing.h \
 	ledprogs/discostrobe.h \
-	ledprogs/halloween.h
+	ledprogs/halloween.h \
+	ledprogs/theaterchase.h
 		

@@ -34,6 +34,7 @@
 #include <FastLED/FastLED.h>
 #include <map>
 #include <vector>
+#include <experimental/random>
 
 class Halloween {
 public:

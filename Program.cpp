@@ -228,20 +228,20 @@ void Program::turnHueLightsOff()
 void Program::runNextEvent()
 {
 	QDateTime dt = QDateTime::currentDateTime();
+    QTime turnOn = QTime(7, 0, 0);
+    QTime turnOff = QTime(16, 0, 0);
 
-    qDebug() << __PRETTY_FUNCTION__ << ": New Event";
-    
+    qDebug() << __PRETTY_FUNCTION__ << ": New Event at" << dt;
+
     if (dt.date().dayOfWeek() < 6) {
         qDebug() << __PRETTY_FUNCTION__ << ": it's a weekday";
-        QTime turnOn = QTime(7, 0, 0);
-        QTime turnOff = QTime(16, 0, 0);
 
         if ((dt.time() >= turnOn) && (dt.time() <= turnOff)) {
 			emit turnLightsOn();
             m_buttons->setButtonState(0, true);
             m_hue->setBrightness(254);
             m_hue->setLightsColor(QColor(Qt::white));
-			QDateTime next(dt.date(), turnOff);
+			QDateTime next(dt.date(), turnOff.addSecs(1));
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
@@ -250,7 +250,7 @@ void Program::runNextEvent()
 		else {
 			emit turnLightsOff();
             m_buttons->turnLedsOff(0);
-			QDateTime next(dt.date().addDays(1), QTime(6,0,1));
+			QDateTime next(dt.date().addDays(1), turnOn.addSecs(1));
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
@@ -260,7 +260,7 @@ void Program::runNextEvent()
 	else {
 			emit turnLightsOff();
             m_buttons->turnLedsOff(0);
-			QDateTime next(dt.date().addDays(1), QTime(6,0,1));
+			QDateTime next(dt.date().addDays(1), turnOn.addSecs(1));
             m_nextEvent->stop();
 			m_nextEvent->setInterval(dt.msecsTo(next));
             m_nextEvent->start();
